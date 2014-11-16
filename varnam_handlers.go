@@ -34,6 +34,10 @@ func transliterate(langCode string, word string) (words []string, err error) {
 	default:
 		var handle *libvarnam.Varnam
 		handle, err = libvarnam.Init(langCode)
+		if err != nil {
+			log.Println(err)
+			return nil, errors.New("Unable to initialize varnam handle")
+		}
 		words, err = handle.Transliterate(word)
 		go sendHandlerToChannel(langCode, handle, ch)
 	}
@@ -52,6 +56,10 @@ func reveseTransliterate(langCode string, word string) (result string, err error
 	default:
 		var handle *libvarnam.Varnam
 		handle, err = libvarnam.Init(langCode)
+		if err != nil {
+			log.Println(err)
+			return "", errors.New("Unable to initialize varnam handle")
+		}
 		result, err = handle.ReverseTransliterate(word)
 		go sendHandlerToChannel(langCode, handle, ch)
 	}
@@ -59,14 +67,17 @@ func reveseTransliterate(langCode string, word string) (result string, err error
 }
 
 func sendHandlerToChannel(langCode string, handle *libvarnam.Varnam, ch chan *libvarnam.Varnam) {
-	if channelsCount[langCode] == maxHandleCount {
+	mutex.Lock()
+	count := channelsCount[langCode]
+	mutex.Unlock()
+	if count == maxHandleCount {
 		log.Printf("Throw away handle")
 		return
 	}
 	select {
 	case ch <- handle:
 		mutex.Lock()
-		count := channelsCount[langCode]
+		count = channelsCount[langCode]
 		channelsCount[langCode] = count + 1
 		mutex.Unlock()
 	default:
