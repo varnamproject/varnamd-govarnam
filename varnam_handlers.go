@@ -22,14 +22,14 @@ func initLanguageChannels() {
 	}
 }
 
-func transliterate(langCode string, word string) (words []string, err error) {
+func getOrCreateHandler(langCode string, f func(handle *libvarnam.Varnam) (data interface{}, err error)) (data interface{}, err error) {
 	ch, ok := langaugeChannels[langCode]
 	if !ok {
 		return nil, errors.New("Invalid Language code")
 	}
 	select {
 	case handle := <-ch:
-		words, err = handle.Transliterate(word)
+		data, err = f(handle)
 		go func() { ch <- handle }()
 	default:
 		var handle *libvarnam.Varnam
@@ -38,32 +38,24 @@ func transliterate(langCode string, word string) (words []string, err error) {
 			log.Println(err)
 			return nil, errors.New("Unable to initialize varnam handle")
 		}
-		words, err = handle.Transliterate(word)
+		data, err = f(handle)
 		go sendHandlerToChannel(langCode, handle, ch)
 	}
 	return
 }
 
-func reveseTransliterate(langCode string, word string) (result string, err error) {
-	ch, ok := langaugeChannels[langCode]
-	if !ok {
-		return "", errors.New("Invalid Language code")
-	}
-	select {
-	case handle := <-ch:
-		result, err = handle.ReverseTransliterate(word)
-		go func() { ch <- handle }()
-	default:
-		var handle *libvarnam.Varnam
-		handle, err = libvarnam.Init(langCode)
-		if err != nil {
-			log.Println(err)
-			return "", errors.New("Unable to initialize varnam handle")
-		}
-		result, err = handle.ReverseTransliterate(word)
-		go sendHandlerToChannel(langCode, handle, ch)
-	}
-	return
+func transliterate(langCode string, word string) (data interface{}, err error) {
+	return getOrCreateHandler(langCode, func(handle *libvarnam.Varnam) (data interface{}, err error) {
+		data, err = handle.Transliterate(word)
+		return
+	})
+}
+
+func reveseTransliterate(langCode string, word string) (data interface{}, err error) {
+	return getOrCreateHandler(langCode, func(handle *libvarnam.Varnam) (data interface{}, err error) {
+		data, err = handle.ReverseTransliterate(word)
+		return
+	})
 }
 
 func sendHandlerToChannel(langCode string, handle *libvarnam.Varnam, ch chan *libvarnam.Varnam) {

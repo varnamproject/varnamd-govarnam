@@ -40,13 +40,21 @@ func getLanguageAndWord(r *http.Request) (langCode string, word string) {
 func transliterationHandler(w http.ResponseWriter, r *http.Request) {
 	langCode, word := getLanguageAndWord(r)
 	words, err := transliterate(langCode, word)
-	renderJson(w, varnamResponse{Result: words, Input: word}, err)
+	if err != nil {
+		renderJson(w, nil, err)
+	} else {
+		renderJson(w, varnamResponse{Result: words.([]string), Input: word}, err)
+	}
 }
 
 func reverseTransliterationHandler(w http.ResponseWriter, r *http.Request) {
 	langCode, word := getLanguageAndWord(r)
 	result, err := reveseTransliterate(langCode, word)
-	renderJson(w, map[string]string{"result": result}, err)
+	if err != nil {
+		renderJson(w, nil, err)
+	} else {
+		renderJson(w, map[string]string{"result": result.(string)}, err)
+	}
 }
 
 func learnHandler(w http.ResponseWriter, r *http.Request) {
