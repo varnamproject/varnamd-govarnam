@@ -3,7 +3,9 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
+	"net/rpc"
 
 	"github.com/gorilla/mux"
 )
@@ -57,6 +59,20 @@ func reverseTransliterationHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func learnHandler(w http.ResponseWriter, r *http.Request) {
-	renderJson(w, "From learn", nil)
+func learnHandler() http.HandlerFunc {
+	client, err := rpc.DialHTTP("tcp", "127.0.0.1:1234")
+	if err != nil {
+		log.Fatal("Unable to establish connection to learn only server:", err)
+	}
+	return func(w http.ResponseWriter, r *http.Request) {
+		langCode := r.FormValue("langCode")
+		word := r.FormValue("word")
+		args := &Args{langCode, word}
+		var reply bool
+		if err := client.Call("VarnamRPC.Learn", args, &reply); err != nil {
+			log.Println("Error in RPC ", err)
+			renderJson(w, "", err)
+		}
+		renderJson(w, "", nil)
+	}
 }
