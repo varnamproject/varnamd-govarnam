@@ -19,15 +19,18 @@ func startServer() {
 }
 
 func startLearnOnlyDaemon() {
+	initLearnChannels()
 	varnamRPC := new(VarnamRPC)
 	rpc.Register(varnamRPC)
 	rpc.HandleHTTP()
-	l, e := net.Listen("tcp", ":1234")
+	l, e := net.Listen("tcp", fmt.Sprintf(":%d", learnPort))
 	if e != nil {
 		log.Fatalln("Learn server error :", e)
 	}
-	log.Println("Starting learn-only server")
-	http.Serve(l, nil)
+	log.Printf("Starting learn-only server at %d", learnPort)
+	if err := http.Serve(l, nil); err != nil {
+		log.Fatalln("Unable to start learn only server ", err)
+	}
 }
 
 func startDaemon() {

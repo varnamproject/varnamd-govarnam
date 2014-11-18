@@ -60,10 +60,11 @@ func reverseTransliterationHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func learnHandler() http.HandlerFunc {
-	client, err := rpc.DialHTTP("tcp", "127.0.0.1:1234")
+	client, err := rpc.DialHTTP("tcp", fmt.Sprintf("127.0.0.1:%d", learnPort))
 	if err != nil {
 		log.Fatal("Unable to establish connection to learn only server:", err)
 	}
+	log.Printf("Connected to learn-only server at %d\n", learnPort)
 	return func(w http.ResponseWriter, r *http.Request) {
 		langCode := r.FormValue("langCode")
 		word := r.FormValue("word")
@@ -73,6 +74,6 @@ func learnHandler() http.HandlerFunc {
 			log.Println("Error in RPC ", err)
 			renderJson(w, "", err)
 		}
-		renderJson(w, "", nil)
+		renderJson(w, "success", nil)
 	}
 }

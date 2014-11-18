@@ -9,7 +9,7 @@ import (
 )
 
 var (
-	languages        = []string{"ml", "hi"}
+	languages        = []string{"ml", "hi"} // Need to replace this when libvarnam has getLanguage function
 	langaugeChannels = make(map[string]chan *libvarnam.Varnam)
 	channelsCount    = make(map[string]int)
 	mutex            = &sync.Mutex{}
