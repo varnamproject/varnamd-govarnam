@@ -4,6 +4,7 @@ import (
 	"errors"
 	"log"
 	"sync"
+	"time"
 
 	"github.com/varnamproject/libvarnam-golang"
 )
@@ -18,7 +19,11 @@ var (
 func initLanguageChannels() {
 	for _, lang := range languages {
 		langaugeChannels[lang] = make(chan *libvarnam.Varnam, maxHandleCount)
-		channelsCount[lang] = 0
+		channelsCount[lang] = maxHandleCount
+		for i := 0; i < maxHandleCount; i++ {
+			handle, _ := libvarnam.Init(lang)
+			langaugeChannels[lang] <- handle
+		}
 	}
 }
 
@@ -31,7 +36,7 @@ func getOrCreateHandler(langCode string, f func(handle *libvarnam.Varnam) (data 
 	case handle := <-ch:
 		data, err = f(handle)
 		go func() { ch <- handle }()
-	default:
+	case <-time.After(800 * time.Millisecond):
 		var handle *libvarnam.Varnam
 		handle, err = libvarnam.Init(langCode)
 		if err != nil {
@@ -64,6 +69,7 @@ func sendHandlerToChannel(langCode string, handle *libvarnam.Varnam, ch chan *li
 	mutex.Unlock()
 	if count == maxHandleCount {
 		log.Printf("Throw away handle")
+		handle.Destroy()
 		return
 	}
 	select {
