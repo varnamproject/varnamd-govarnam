@@ -11,12 +11,15 @@ import (
 
 var (
 	languages        = []string{"ml", "hi"} // Need to replace this when libvarnam has getLanguage function
-	langaugeChannels = make(map[string]chan *libvarnam.Varnam)
-	channelsCount    = make(map[string]int)
-	mutex            = &sync.Mutex{}
+	langaugeChannels map[string]chan *libvarnam.Varnam
+	channelsCount    map[string]int
+	mutex            *sync.Mutex
 )
 
 func initLanguageChannels() {
+	langaugeChannels = make(map[string]chan *libvarnam.Varnam)
+	channelsCount = make(map[string]int)
+	mutex = &sync.Mutex{}
 	for _, lang := range languages {
 		langaugeChannels[lang] = make(chan *libvarnam.Varnam, maxHandleCount)
 		channelsCount[lang] = maxHandleCount
