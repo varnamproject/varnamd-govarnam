@@ -8,8 +8,8 @@ import (
 )
 
 type Args struct {
-	LangCode string
-	Word     string
+	LangCode string `json:"lang"`
+	Word     string `json:"text"`
 }
 
 type VarnamRPC struct{}

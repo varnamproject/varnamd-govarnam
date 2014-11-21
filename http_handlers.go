@@ -66,13 +66,18 @@ func learnHandler() http.HandlerFunc {
 	}
 	log.Printf("Connected to learn-only server at %d\n", learnPort)
 	return func(w http.ResponseWriter, r *http.Request) {
-		langCode := r.FormValue("langCode")
-		word := r.FormValue("word")
-		args := &Args{langCode, word}
+		decoder := json.NewDecoder(r.Body)
+		var args Args
+		if err := decoder.Decode(&args); err != nil {
+			log.Println("Error in decoding ", err)
+			renderJson(w, "", err)
+			return
+		}
 		var reply bool
-		if err := client.Call("VarnamRPC.Learn", args, &reply); err != nil {
+		if err := client.Call("VarnamRPC.Learn", &args, &reply); err != nil {
 			log.Println("Error in RPC ", err)
 			renderJson(w, "", err)
+			return
 		}
 		renderJson(w, "success", nil)
 	}
