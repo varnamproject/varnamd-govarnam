@@ -59,10 +59,21 @@ func reverseTransliterationHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func repeatDial(times int) (client *rpc.Client, err error) {
+	for times == 0 {
+		client, err = rpc.DialHTTP("tcp", fmt.Sprintf("127.0.0.1:%d", learnPort))
+		if err == nil {
+			return
+		}
+		times--
+	}
+	return
+}
+
 func learnHandler() http.HandlerFunc {
-	client, err := rpc.DialHTTP("tcp", fmt.Sprintf("127.0.0.1:%d", learnPort))
+	client, err := repeatDial(10)
 	if err != nil {
-		log.Fatal("Unable to establish connection to learn only server:", err)
+		log.Fatalln("Unable to establish connection to learn only server:", err)
 	}
 	log.Printf("Connected to learn-only server at %d\n", learnPort)
 	return func(w http.ResponseWriter, r *http.Request) {
