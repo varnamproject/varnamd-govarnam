@@ -29,13 +29,13 @@ var (
 
 func initLearnChannels() {
 	learnChannels = make(map[string]chan string)
-	for _, lang := range languages {
-		learnChannels[lang] = make(chan string, 100)
-		handle, err := libvarnam.Init(lang)
+	for _, scheme := range schemeDetails {
+		learnChannels[scheme.LangCode] = make(chan string, 100)
+		handle, err := libvarnam.Init(scheme.LangCode)
 		if err != nil {
-			log.Fatal("Unable to initialize varnam for lang", lang)
+			log.Fatal("Unable to initialize varnam for lang", scheme.LangCode)
 		}
-		go listenForWords(lang, handle)
+		go listenForWords(scheme.LangCode, handle)
 	}
 }
 

@@ -10,7 +10,7 @@ import (
 )
 
 var (
-	languages        = []string{"ml", "hi"} // Need to replace this when libvarnam has getLanguage function
+	schemeDetails    = libvarnam.GetAllSchemeDetails()
 	langaugeChannels map[string]chan *libvarnam.Varnam
 	channelsCount    map[string]int
 	mutex            *sync.Mutex
@@ -20,12 +20,12 @@ func initLanguageChannels() {
 	langaugeChannels = make(map[string]chan *libvarnam.Varnam)
 	channelsCount = make(map[string]int)
 	mutex = &sync.Mutex{}
-	for _, lang := range languages {
-		langaugeChannels[lang] = make(chan *libvarnam.Varnam, maxHandleCount)
-		channelsCount[lang] = maxHandleCount
+	for _, scheme := range schemeDetails {
+		langaugeChannels[scheme.LangCode] = make(chan *libvarnam.Varnam, maxHandleCount)
+		channelsCount[scheme.LangCode] = maxHandleCount
 		for i := 0; i < maxHandleCount; i++ {
-			handle, _ := libvarnam.Init(lang)
-			langaugeChannels[lang] <- handle
+			handle, _ := libvarnam.Init(scheme.LangCode)
+			langaugeChannels[scheme.LangCode] <- handle
 		}
 	}
 }
