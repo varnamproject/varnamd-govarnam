@@ -60,28 +60,28 @@ func reverseTransliterationHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func repeatDial(times int) (client *rpc.Client, err error) {
-	for times == 0 {
+	for times != 0 {
 		client, err = rpc.DialHTTP("tcp", fmt.Sprintf("127.0.0.1:%d", learnPort))
 		if err == nil {
 			return
 		}
 		times--
 	}
-	return
+	return client, err
 }
 
 func learnHandler() http.HandlerFunc {
 	client, err := repeatDial(10)
-	if err != nil {
+	if err != nil || client == nil {
 		log.Fatalln("Unable to establish connection to learn only server:", err)
 	}
 	log.Printf("Connected to learn-only server at %d\n", learnPort)
 	return func(w http.ResponseWriter, r *http.Request) {
 		decoder := json.NewDecoder(r.Body)
 		var args Args
-		if err := decoder.Decode(&args); err != nil {
-			log.Println("Error in decoding ", err)
-			renderJson(w, "", err)
+		if e := decoder.Decode(&args); e != nil {
+			log.Println("Error in decoding ", e)
+			renderJson(w, "", e)
 			return
 		}
 		var reply bool
