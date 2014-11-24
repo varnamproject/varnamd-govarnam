@@ -59,6 +59,10 @@ func reverseTransliterationHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func languagesHandler(w http.ResponseWriter, r *http.Request) {
+	renderJson(w, schemeDetails, nil)
+}
+
 func repeatDial(times int) (client *rpc.Client, err error) {
 	for times != 0 {
 		client, err = rpc.DialHTTP("tcp", fmt.Sprintf("127.0.0.1:%d", learnPort))
