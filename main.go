@@ -7,6 +7,7 @@ var (
 	learnOnly      bool
 	maxHandleCount int
 	learnPort      int
+	host           string
 )
 
 func init() {
@@ -14,6 +15,7 @@ func init() {
 	flag.IntVar(&learnPort, "lp", 8088, "Run learn daemon in specified port (rpc port)")
 	flag.BoolVar(&learnOnly, "learn-only", false, "Run learn only daemon")
 	flag.IntVar(&maxHandleCount, "max-handle-count", 10, "Maximum number of handles can be opened for each language")
+	flag.StringVar(&host, "host", "", "Host for the varnam daemon server")
 }
 
 func main() {
