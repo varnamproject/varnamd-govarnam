@@ -8,6 +8,7 @@ var (
 	maxHandleCount int
 	learnPort      int
 	host           string
+	uiDir          string
 )
 
 func init() {
@@ -16,6 +17,7 @@ func init() {
 	flag.BoolVar(&learnOnly, "learn-only", false, "Run learn only daemon")
 	flag.IntVar(&maxHandleCount, "max-handle-count", 10, "Maximum number of handles can be opened for each language")
 	flag.StringVar(&host, "host", "", "Host for the varnam daemon server")
+	flag.StringVar(&uiDir, "ui", "", "UI directory path")
 }
 
 func main() {

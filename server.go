@@ -52,9 +52,23 @@ func startDaemon() {
 	r.HandleFunc("/learn", learnHandler()).Methods("POST")
 	r.HandleFunc("/languages", languagesHandler).Methods("GET")
 
+	addUI(r)
+
 	address := fmt.Sprintf("%s:%d", host, port)
 	log.Printf("Starting server at %s", address)
 	if err := http.ListenAndServe(address, r); err != nil {
 		log.Fatalln(err)
 	}
+}
+
+func addUI(r *mux.Router) {
+	if uiDir == "" {
+		return
+	}
+
+	if _, err := os.Stat(uiDir); err != nil {
+		log.Fatalln("UI path doesnot exist", err)
+	}
+
+	r.PathPrefix("/").Handler(http.FileServer(http.Dir(uiDir)))
 }
