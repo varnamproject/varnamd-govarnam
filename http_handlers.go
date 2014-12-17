@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"net/rpc"
+	"time"
 
 	"github.com/gorilla/mux"
 )
@@ -69,6 +70,7 @@ func repeatDial(times int) (client *rpc.Client, err error) {
 		if err == nil {
 			return
 		}
+		<-time.After(100 * time.Millisecond)
 		times--
 	}
 	return client, err
