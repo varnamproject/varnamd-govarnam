@@ -70,7 +70,7 @@ func repeatDial(times int) (client *rpc.Client, err error) {
 		if err == nil {
 			return
 		}
-		<-time.After(100 * time.Millisecond)
+		<-time.After(300 * time.Millisecond)
 		times--
 	}
 	return client, err
