@@ -24,7 +24,10 @@ func initLanguageChannels() {
 		langaugeChannels[scheme.LangCode] = make(chan *libvarnam.Varnam, maxHandleCount)
 		channelsCount[scheme.LangCode] = maxHandleCount
 		for i := 0; i < maxHandleCount; i++ {
-			handle, _ := libvarnam.Init(scheme.LangCode)
+			handle, err := libvarnam.Init(scheme.LangCode)
+			if err != nil {
+				panic("Unable to init varnam for language" + scheme.LangCode)
+			}
 			langaugeChannels[scheme.LangCode] <- handle
 		}
 	}
