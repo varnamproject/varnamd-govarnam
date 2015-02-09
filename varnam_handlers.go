@@ -11,29 +11,29 @@ import (
 
 var (
 	schemeDetails    = libvarnam.GetAllSchemeDetails()
-	langaugeChannels map[string]chan *libvarnam.Varnam
+	languageChannels map[string]chan *libvarnam.Varnam
 	channelsCount    map[string]int
 	mutex            *sync.Mutex
 )
 
 func initLanguageChannels() {
-	langaugeChannels = make(map[string]chan *libvarnam.Varnam)
+	languageChannels = make(map[string]chan *libvarnam.Varnam)
 	channelsCount = make(map[string]int)
 	mutex = &sync.Mutex{}
 	for _, scheme := range schemeDetails {
-		langaugeChannels[scheme.LangCode] = make(chan *libvarnam.Varnam, maxHandleCount)
-		channelsCount[scheme.LangCode] = maxHandleCount
+		languageChannels[scheme.Identifier] = make(chan *libvarnam.Varnam, maxHandleCount)
+		channelsCount[scheme.Identifier] = maxHandleCount
 		for i := 0; i < maxHandleCount; i++ {
-			handle, _ := libvarnam.Init(scheme.LangCode)
-			langaugeChannels[scheme.LangCode] <- handle
+			handle, _ := libvarnam.Init(scheme.Identifier)
+			languageChannels[scheme.Identifier] <- handle
 		}
 	}
 }
 
-func getOrCreateHandler(langCode string, f func(handle *libvarnam.Varnam) (data interface{}, err error)) (data interface{}, err error) {
-	ch, ok := langaugeChannels[langCode]
+func getOrCreateHandler(schemeIdentifier string, f func(handle *libvarnam.Varnam) (data interface{}, err error)) (data interface{}, err error) {
+	ch, ok := languageChannels[schemeIdentifier]
 	if !ok {
-		return nil, errors.New("Invalid Language code")
+		return nil, errors.New("Invalid scheme identifier")
 	}
 	select {
 	case handle := <-ch:
@@ -41,34 +41,34 @@ func getOrCreateHandler(langCode string, f func(handle *libvarnam.Varnam) (data 
 		go func() { ch <- handle }()
 	case <-time.After(800 * time.Millisecond):
 		var handle *libvarnam.Varnam
-		handle, err = libvarnam.Init(langCode)
+		handle, err = libvarnam.Init(schemeIdentifier)
 		if err != nil {
 			log.Println(err)
 			return nil, errors.New("Unable to initialize varnam handle")
 		}
 		data, err = f(handle)
-		go sendHandlerToChannel(langCode, handle, ch)
+		go sendHandlerToChannel(schemeIdentifier, handle, ch)
 	}
 	return
 }
 
-func transliterate(langCode string, word string) (data interface{}, err error) {
-	return getOrCreateHandler(langCode, func(handle *libvarnam.Varnam) (data interface{}, err error) {
+func transliterate(schemeIdentifier string, word string) (data interface{}, err error) {
+	return getOrCreateHandler(schemeIdentifier, func(handle *libvarnam.Varnam) (data interface{}, err error) {
 		data, err = handle.Transliterate(word)
 		return
 	})
 }
 
-func reveseTransliterate(langCode string, word string) (data interface{}, err error) {
-	return getOrCreateHandler(langCode, func(handle *libvarnam.Varnam) (data interface{}, err error) {
+func reveseTransliterate(schemeIdentifier string, word string) (data interface{}, err error) {
+	return getOrCreateHandler(schemeIdentifier, func(handle *libvarnam.Varnam) (data interface{}, err error) {
 		data, err = handle.ReverseTransliterate(word)
 		return
 	})
 }
 
-func sendHandlerToChannel(langCode string, handle *libvarnam.Varnam, ch chan *libvarnam.Varnam) {
+func sendHandlerToChannel(schemeIdentifier string, handle *libvarnam.Varnam, ch chan *libvarnam.Varnam) {
 	mutex.Lock()
-	count := channelsCount[langCode]
+	count := channelsCount[schemeIdentifier]
 	mutex.Unlock()
 	if count == maxHandleCount {
 		log.Printf("Throw away handle")
@@ -78,8 +78,8 @@ func sendHandlerToChannel(langCode string, handle *libvarnam.Varnam, ch chan *li
 	select {
 	case ch <- handle:
 		mutex.Lock()
-		count = channelsCount[langCode]
-		channelsCount[langCode] = count + 1
+		count = channelsCount[schemeIdentifier]
+		channelsCount[schemeIdentifier] = count + 1
 		mutex.Unlock()
 	default:
 	}

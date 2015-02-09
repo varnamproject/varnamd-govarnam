@@ -2,9 +2,8 @@ package main
 
 import (
 	"errors"
-	"log"
-
 	"github.com/varnamproject/libvarnam-golang"
+	"log"
 )
 
 type Args struct {
@@ -30,12 +29,12 @@ var (
 func initLearnChannels() {
 	learnChannels = make(map[string]chan string)
 	for _, scheme := range schemeDetails {
-		learnChannels[scheme.LangCode] = make(chan string, 100)
-		handle, err := libvarnam.Init(scheme.LangCode)
+		learnChannels[scheme.Identifier] = make(chan string, 100)
+		handle, err := libvarnam.Init(scheme.Identifier)
 		if err != nil {
 			log.Fatal("Unable to initialize varnam for lang", scheme.LangCode)
 		}
-		go listenForWords(scheme.LangCode, handle)
+		go listenForWords(scheme.Identifier, handle)
 	}
 }
 

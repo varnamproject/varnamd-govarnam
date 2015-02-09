@@ -154,7 +154,7 @@
             <script>
               $.get('languages',function(data){
                 $.each(data,function(i,language){
-                  $("#lang-menu").append("<li><a tabindex='-1' href='#' class='lang' data-lang='"+language.LangCode+"'>"+language.DisplayName+"</a></li>")
+                  $("#lang-menu").append("<li><a tabindex='-1' href='#' class='lang' data-lang='"+language.Identifier+"'>"+language.DisplayName+"</a></li>")
                 });
               });
             </script>
