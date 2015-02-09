@@ -28,7 +28,7 @@ func initLanguageChannels() {
 			if err != nil {
 				panic("Unable to init varnam for language" + scheme.LangCode)
 			}
-			langaugeChannels[scheme.Identifier] <- handle
+			languageChannels[scheme.Identifier] <- handle
 		}
 	}
 }
