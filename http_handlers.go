@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"net/rpc"
+	"time"
 
 	"github.com/gorilla/mux"
 )
@@ -27,7 +28,7 @@ func renderJson(w http.ResponseWriter, data interface{}, err error) {
 
 func marshal(item interface{}, w http.ResponseWriter) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(item)
 }
@@ -69,6 +70,7 @@ func repeatDial(times int) (client *rpc.Client, err error) {
 		if err == nil {
 			return
 		}
+		<-time.After(300 * time.Millisecond)
 		times--
 	}
 	return client, err
