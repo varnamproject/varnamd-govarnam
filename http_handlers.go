@@ -16,9 +16,20 @@ type varnamResponse struct {
 	Input  string   `json:"input"`
 }
 
+func corsHandler(h http.Handler) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		if r.Method == "OPTIONS" {
+			w.WriteHeader(http.StatusOK)
+		} else {
+			h.ServeHTTP(w, r)
+		}
+	}
+}
+
 func renderJson(w http.ResponseWriter, data interface{}, err error) {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	if err != nil {
-		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte(fmt.Sprintln(err)))
 		return
@@ -27,8 +38,6 @@ func renderJson(w http.ResponseWriter, data interface{}, err error) {
 }
 
 func marshal(item interface{}, w http.ResponseWriter) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(item)
 }

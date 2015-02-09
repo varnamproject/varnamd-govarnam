@@ -56,7 +56,7 @@ func startDaemon() {
 
 	address := fmt.Sprintf("%s:%d", host, port)
 	log.Printf("Starting server at %s", address)
-	if err := http.ListenAndServe(address, r); err != nil {
+	if err := http.ListenAndServe(address, corsHandler(r)); err != nil {
 		log.Fatalln(err)
 	}
 }
