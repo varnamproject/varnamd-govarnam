@@ -79,14 +79,14 @@ func repeatDial(times int) (client *rpc.Client, err error) {
 		if err == nil {
 			return
 		}
-		<-time.After(300 * time.Millisecond)
+		<-time.After(1 * time.Second)
 		times--
 	}
 	return client, err
 }
 
 func learnHandler() http.HandlerFunc {
-	client, err := repeatDial(10)
+	client, err := repeatDial(20)
 	if err != nil || client == nil {
 		log.Fatalln("Unable to establish connection to learn only server:", err)
 	}
