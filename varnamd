@@ -1,0 +1,68 @@
+#! /bin/sh
+#
+# varnamd init script
+#
+# chkconfig: 345 99 99
+# description: varnamd init script
+# processname: varnamd
+ 
+varnamd_bin="/usr/local/bin/varnamd"
+varnamd_log="/var/log/varnamd/varnamd.log"
+varnamd_err="/var/log/varnamd/varnamd.err"
+NICE_LEVEL="-n 19"
+ 
+find_varnamd_process () {
+    PIDTEMP=`ps ux | grep varnamd | awk '{ print $2 }'`
+    # Pid not found
+    if [ "x$PIDTEMP" = "x" ]; then
+        PID=-1
+    else
+        PID=$PIDTEMP
+    fi
+}
+ 
+start () {
+    LOG_DIR=`dirname ${varnamd_log}`
+    if [ ! -d $LOG_DIR ]; then
+      echo "Log dir ${LOG_DIR} doesn't exist. Creating"
+      mkdir $LOG_DIR
+    fi
+    nohup nice ${NICE_LEVEL} ${varnamd_bin} >  ${varnamd_log} 2>${varnamd_err} &
+}
+ 
+stop () {
+    find_varnamd_process
+    if [ $PID -ne -1 ]; then
+        kill $PID
+    fi
+}
+ 
+case $1 in
+start)
+        start
+        ;;
+stop)
+        stop
+        exit 0
+        ;;
+reload)
+        stop
+        start
+        ;;
+restart)
+        stop
+        start
+        ;;
+status)
+        find_varnamd_process
+	if [ $PID -gt 0 ]; then
+            exit 0
+        else
+            exit 1
+	fi 
+        ;;
+*)
+        echo $"Usage: $0 {start|stop|restart|reload|status}"
+        RETVAL=1
+esac
+exit 0
