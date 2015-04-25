@@ -22,4 +22,5 @@ _testmain.go
 *.exe
 *.test
 *.prof
-varnam-daemon
+varnamd
+!init.d/varnamd
