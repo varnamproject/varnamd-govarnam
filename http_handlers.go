@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
+	"github.com/varnamproject/libvarnam-golang"
 )
 
 type varnamResponse struct {
@@ -80,6 +81,15 @@ func reverseTransliterationHandler(w http.ResponseWriter, r *http.Request) {
 	} else {
 		renderJson(w, map[string]string{"result": result.(string)}, err)
 	}
+}
+
+func metadataHandler(w http.ResponseWriter, r *http.Request) {
+	schemeIdentifier, _ := getLanguageAndWord(r)
+	getOrCreateHandler(schemeIdentifier, func(handle *libvarnam.Varnam) (data interface{}, err error) {
+		details, err := handle.GetCorpusDetails()
+		renderJson(w, details, err)
+		return
+	})
 }
 
 func languagesHandler(w http.ResponseWriter, r *http.Request) {

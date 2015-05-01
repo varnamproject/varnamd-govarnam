@@ -49,6 +49,7 @@ func startDaemon() {
 	r := mux.NewRouter()
 	r.HandleFunc("/tl/{langCode}/{word}", transliterationHandler).Methods("GET")
 	r.HandleFunc("/rtl/{langCode}/{word}", reverseTransliterationHandler).Methods("GET")
+	r.HandleFunc("/meta/{langCode}", metadataHandler).Methods("GET")
 	r.HandleFunc("/learn", learnHandler()).Methods("POST")
 	r.HandleFunc("/languages", languagesHandler).Methods("GET")
 
