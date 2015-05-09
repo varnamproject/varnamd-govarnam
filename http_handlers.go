@@ -41,11 +41,16 @@ func recoverHandler(next http.Handler) http.Handler {
 	return http.HandlerFunc(fn)
 }
 
-func renderJson(w http.ResponseWriter, data interface{}, err error) {
+func renderJSON(w http.ResponseWriter, data interface{}, err error) {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte(fmt.Sprintln(err)))
+		errorData := struct {
+			Error string `json:"error"`
+		}{
+			err.Error(),
+		}
+		json.NewEncoder(w).Encode(errorData)
 		return
 	}
 	marshal(data, w)
@@ -67,9 +72,9 @@ func transliterationHandler(w http.ResponseWriter, r *http.Request) {
 	langCode, word := getLanguageAndWord(r)
 	words, err := transliterate(langCode, word)
 	if err != nil {
-		renderJson(w, nil, err)
+		renderJSON(w, nil, err)
 	} else {
-		renderJson(w, varnamResponse{Result: words.([]string), Input: word}, err)
+		renderJSON(w, varnamResponse{Result: words.([]string), Input: word}, err)
 	}
 }
 
@@ -77,9 +82,9 @@ func reverseTransliterationHandler(w http.ResponseWriter, r *http.Request) {
 	langCode, word := getLanguageAndWord(r)
 	result, err := reveseTransliterate(langCode, word)
 	if err != nil {
-		renderJson(w, nil, err)
+		renderJSON(w, nil, err)
 	} else {
-		renderJson(w, map[string]string{"result": result.(string)}, err)
+		renderJSON(w, map[string]string{"result": result.(string)}, err)
 	}
 }
 
@@ -87,13 +92,13 @@ func metadataHandler(w http.ResponseWriter, r *http.Request) {
 	schemeIdentifier, _ := getLanguageAndWord(r)
 	getOrCreateHandler(schemeIdentifier, func(handle *libvarnam.Varnam) (data interface{}, err error) {
 		details, err := handle.GetCorpusDetails()
-		renderJson(w, details, err)
+		renderJSON(w, details, err)
 		return
 	})
 }
 
 func languagesHandler(w http.ResponseWriter, r *http.Request) {
-	renderJson(w, schemeDetails, nil)
+	renderJSON(w, schemeDetails, nil)
 }
 
 func repeatDial(times int) (client *rpc.Client, err error) {
@@ -119,15 +124,15 @@ func learnHandler() http.HandlerFunc {
 		var args Args
 		if e := decoder.Decode(&args); e != nil {
 			log.Println("Error in decoding ", e)
-			renderJson(w, "", e)
+			renderJSON(w, "", e)
 			return
 		}
 		var reply bool
 		if err := client.Call("VarnamRPC.Learn", &args, &reply); err != nil {
 			log.Println("Error in RPC ", err)
-			renderJson(w, "", err)
+			renderJSON(w, "", err)
 			return
 		}
-		renderJson(w, "success", nil)
+		renderJSON(w, "success", nil)
 	}
 }
