@@ -1,20 +1,43 @@
 package main
 
 import (
+	"bytes"
+	"compress/gzip"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"github.com/golang/groupcache"
+	"github.com/gorilla/mux"
+	"github.com/varnamproject/libvarnam-golang"
 	"log"
 	"net/http"
 	"net/rpc"
+	"strconv"
+	"strings"
 	"time"
-
-	"github.com/gorilla/mux"
-	"github.com/varnamproject/libvarnam-golang"
 )
 
 type varnamResponse struct {
 	Result []string `json:"result"`
 	Input  string   `json:"input"`
+}
+
+type downloadResponse struct {
+	Count int     `json:"count"`
+	Words []*word `json:"words"`
+}
+
+type requestParams struct {
+	langCode      string
+	word          string
+	downloadStart int
+}
+
+func parseParams(r *http.Request) *requestParams {
+	params := mux.Vars(r)
+	downloadStart, _ := strconv.Atoi(params["downloadStart"])
+	return &requestParams{langCode: params["langCode"], word: params["word"],
+		downloadStart: downloadStart}
 }
 
 func corsHandler(h http.Handler) http.HandlerFunc {
@@ -41,7 +64,7 @@ func recoverHandler(next http.Handler) http.Handler {
 	return http.HandlerFunc(fn)
 }
 
-func renderJSON(w http.ResponseWriter, data interface{}, err error) {
+func renderError(w http.ResponseWriter, err error) {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
@@ -51,14 +74,19 @@ func renderJSON(w http.ResponseWriter, data interface{}, err error) {
 			err.Error(),
 		}
 		json.NewEncoder(w).Encode(errorData)
-		return
 	}
-	marshal(data, w)
 }
 
-func marshal(item interface{}, w http.ResponseWriter) {
+func renderGzippedJSON(w http.ResponseWriter, data []byte) {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.Header().Set("Content-Encoding", "gzip")
+	w.Write(data)
+}
+
+func renderJSON(w http.ResponseWriter, data interface{}) {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(item)
+	json.NewEncoder(w).Encode(data)
 }
 
 func getLanguageAndWord(r *http.Request) (langCode string, word string) {
@@ -68,13 +96,23 @@ func getLanguageAndWord(r *http.Request) (langCode string, word string) {
 	return
 }
 
+func getLangCode(r *http.Request) string {
+	params := mux.Vars(r)
+	return params["langCode"]
+}
+
+func getWord(r *http.Request) string {
+	params := mux.Vars(r)
+	return params["word"]
+}
+
 func transliterationHandler(w http.ResponseWriter, r *http.Request) {
 	langCode, word := getLanguageAndWord(r)
 	words, err := transliterate(langCode, word)
 	if err != nil {
-		renderJSON(w, nil, err)
+		renderError(w, err)
 	} else {
-		renderJSON(w, varnamResponse{Result: words.([]string), Input: word}, err)
+		renderJSON(w, varnamResponse{Result: words.([]string), Input: word})
 	}
 }
 
@@ -82,9 +120,9 @@ func reverseTransliterationHandler(w http.ResponseWriter, r *http.Request) {
 	langCode, word := getLanguageAndWord(r)
 	result, err := reveseTransliterate(langCode, word)
 	if err != nil {
-		renderJSON(w, nil, err)
+		renderError(w, err)
 	} else {
-		renderJSON(w, map[string]string{"result": result.(string)}, err)
+		renderJSON(w, map[string]string{"result": result.(string)})
 	}
 }
 
@@ -92,13 +130,74 @@ func metadataHandler(w http.ResponseWriter, r *http.Request) {
 	schemeIdentifier, _ := getLanguageAndWord(r)
 	getOrCreateHandler(schemeIdentifier, func(handle *libvarnam.Varnam) (data interface{}, err error) {
 		details, err := handle.GetCorpusDetails()
-		renderJSON(w, details, err)
+		if err != nil {
+			renderError(w, err)
+			return
+		}
+		renderJSON(w, details)
 		return
 	})
 }
 
+func downloadHandler(w http.ResponseWriter, r *http.Request) {
+	params := parseParams(r)
+	if params.downloadStart < 0 {
+		renderError(w, errors.New("Invalid parameters"))
+		return
+	}
+
+	fillCache := func(ctx groupcache.Context, key string, dest groupcache.Sink) error {
+		// cache miss, fetch from DB
+		// key is in the form <schemeIdentifier>+<downloadStart>
+		parts := strings.Split(key, "+")
+		schemeId := parts[0]
+		downloadStart, _ := strconv.Atoi(parts[1])
+		words, err := getWords(schemeId, downloadStart)
+		if err != nil {
+			return err
+		}
+
+		response := downloadResponse{Count: len(words), Words: words}
+		b, err := json.Marshal(response)
+		if err != nil {
+			return err
+		}
+
+		// gzipping the response so that it can be served directly
+		var gb bytes.Buffer
+		gWriter := gzip.NewWriter(&gb)
+		gWriter.Write(b)
+		gWriter.Close()
+
+		dest.SetBytes(gb.Bytes())
+		return nil
+	}
+
+	once.Do(func() {
+		// Making the groups for groupcache
+		// There will be one group for each language
+		for _, scheme := range schemeDetails {
+			group := groupcache.GetGroup(scheme.Identifier)
+			if group == nil {
+				group = groupcache.NewGroup(scheme.Identifier, 1<<20, groupcache.GetterFunc(fillCache))
+			}
+			cacheGroups[scheme.Identifier] = group
+		}
+	})
+
+	cacheGroup := cacheGroups[params.langCode]
+	var data []byte
+	err := cacheGroup.Get(nil,
+		fmt.Sprintf("%s+%d", params.langCode, params.downloadStart), groupcache.AllocatingByteSliceSink(&data))
+	if err != nil {
+		renderError(w, err)
+	}
+
+	renderGzippedJSON(w, data)
+}
+
 func languagesHandler(w http.ResponseWriter, r *http.Request) {
-	renderJSON(w, schemeDetails, nil)
+	renderJSON(w, schemeDetails)
 }
 
 func repeatDial(times int) (client *rpc.Client, err error) {
@@ -124,15 +223,15 @@ func learnHandler() http.HandlerFunc {
 		var args Args
 		if e := decoder.Decode(&args); e != nil {
 			log.Println("Error in decoding ", e)
-			renderJSON(w, "", e)
+			renderError(w, e)
 			return
 		}
 		var reply bool
 		if err := client.Call("VarnamRPC.Learn", &args, &reply); err != nil {
 			log.Println("Error in RPC ", err)
-			renderJSON(w, "", err)
+			renderError(w, err)
 			return
 		}
-		renderJSON(w, "success", nil)
+		renderJSON(w, "success")
 	}
 }

@@ -1,19 +1,30 @@
 package main
 
 import (
+	"database/sql"
 	"errors"
+	"github.com/golang/groupcache"
+	_ "github.com/mattn/go-sqlite3"
+	"github.com/varnamproject/libvarnam-golang"
 	"log"
 	"sync"
 	"time"
-
-	"github.com/varnamproject/libvarnam-golang"
 )
 
+type word struct {
+	Id         int    `json:"id"`
+	Confidence int    `json:"confidence"`
+	Word       string `json:"word"`
+}
+
 var (
-	schemeDetails    = libvarnam.GetAllSchemeDetails()
 	languageChannels map[string]chan *libvarnam.Varnam
 	channelsCount    map[string]int
 	mutex            *sync.Mutex
+	once             sync.Once
+	schemeDetails    = libvarnam.GetAllSchemeDetails()
+	peers            = groupcache.NewHTTPPool("http://localhost")
+	cacheGroups      = make(map[string]*groupcache.Group)
 )
 
 func initLanguageChannels() {
@@ -60,6 +71,34 @@ func transliterate(schemeIdentifier string, word string) (data interface{}, err 
 		data, err = handle.Transliterate(word)
 		return
 	})
+}
+
+func getWords(schemeIdentifier string, downloadStart int) ([]*word, error) {
+	filepath, _ := getOrCreateHandler(schemeIdentifier, func(handle *libvarnam.Varnam) (data interface{}, err error) {
+		return handle.GetSuggestionsFilePath(), nil
+	})
+
+	db, err := sql.Open("sqlite3", filepath.(string))
+	if err != nil {
+		return nil, err
+	}
+	defer db.Close()
+
+	rows, err := db.Query("select id, word, confidence from words limit 5000 offset ?;", downloadStart)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var words []*word
+	for rows.Next() {
+		var id, confidence int
+		var _word string
+		rows.Scan(&id, &_word, &confidence)
+		words = append(words, &word{Id: id, Confidence: confidence, Word: _word})
+	}
+
+	return words, nil
 }
 
 func reveseTransliterate(schemeIdentifier string, word string) (data interface{}, err error) {
