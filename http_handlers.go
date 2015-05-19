@@ -6,15 +6,16 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/golang/groupcache"
-	"github.com/gorilla/mux"
-	"github.com/varnamproject/libvarnam-golang"
 	"log"
 	"net/http"
 	"net/rpc"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/golang/groupcache"
+	"github.com/gorilla/mux"
+	"github.com/varnamproject/libvarnam-golang"
 )
 
 type varnamResponse struct {
@@ -166,8 +167,9 @@ func downloadHandler(w http.ResponseWriter, r *http.Request) {
 		// gzipping the response so that it can be served directly
 		var gb bytes.Buffer
 		gWriter := gzip.NewWriter(&gb)
+		defer gWriter.Close()
 		gWriter.Write(b)
-		gWriter.Close()
+		gWriter.Flush()
 
 		dest.SetBytes(gb.Bytes())
 		return nil
@@ -179,7 +181,8 @@ func downloadHandler(w http.ResponseWriter, r *http.Request) {
 		for _, scheme := range schemeDetails {
 			group := groupcache.GetGroup(scheme.Identifier)
 			if group == nil {
-				group = groupcache.NewGroup(scheme.Identifier, 1<<20, groupcache.GetterFunc(fillCache))
+				// 100MB max size for cache
+				group = groupcache.NewGroup(scheme.Identifier, 100<<20, groupcache.GetterFunc(fillCache))
 			}
 			cacheGroups[scheme.Identifier] = group
 		}
