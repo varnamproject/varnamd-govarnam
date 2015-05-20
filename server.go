@@ -53,6 +53,7 @@ func startDaemon() {
 	r.HandleFunc("/download/{langCode}/{downloadStart}", downloadHandler).Methods("GET")
 	r.HandleFunc("/learn", learnHandler()).Methods("POST")
 	r.HandleFunc("/languages", languagesHandler).Methods("GET")
+	r.HandleFunc("/status", statusHandler).Methods("GET")
 
 	addUI(r)
 

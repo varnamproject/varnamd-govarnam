@@ -11,14 +11,15 @@ import (
 )
 
 var (
-	port           int
-	learnOnly      bool
-	version        bool
-	maxHandleCount int
-	learnPort      int
-	host           string
-	uiDir          string
-	varnamdConfig  *config // config instance used across the applicarion
+	port               int
+	learnOnly          bool
+	version            bool
+	maxHandleCount     int
+	learnPort          int
+	host               string
+	uiDir              string
+	enableInternalApis bool    // internal APIs are not exposed to public
+	varnamdConfig      *config // config instance used across the applicarion
 )
 
 // varnamd configurations
@@ -100,8 +101,8 @@ func init() {
 	flag.IntVar(&maxHandleCount, "max-handle-count", 10, "Maximum number of handles can be opened for each language")
 	flag.StringVar(&host, "host", "", "Host for the varnam daemon server")
 	flag.StringVar(&uiDir, "ui", "", "UI directory path")
+	flag.BoolVar(&enableInternalApis, "enable-internal-apis", false, "Enable internal APIs")
 	flag.BoolVar(&version, "version", false, "Print the version and exit")
-	varnamdConfig = loadConfigFromFile()
 }
 
 func main() {

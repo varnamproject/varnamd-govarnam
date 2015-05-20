@@ -107,6 +107,13 @@ func getWord(r *http.Request) string {
 	return params["word"]
 }
 
+func statusHandler(w http.ResponseWriter, r *http.Request) {
+	type statusResponse struct {
+		Status string `json:"status"`
+	}
+	renderJSON(w, &statusResponse{Status: "OK"})
+}
+
 func transliterationHandler(w http.ResponseWriter, r *http.Request) {
 	langCode, word := getLanguageAndWord(r)
 	words, err := transliterate(langCode, word)
