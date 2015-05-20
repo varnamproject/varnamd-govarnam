@@ -18,6 +18,10 @@ import (
 	"github.com/varnamproject/libvarnam-golang"
 )
 
+type statusResponse struct {
+	Success bool `json:"success"`
+}
+
 type varnamResponse struct {
 	Result []string `json:"result"`
 	Input  string   `json:"input"`
@@ -108,10 +112,26 @@ func getWord(r *http.Request) string {
 }
 
 func statusHandler(w http.ResponseWriter, r *http.Request) {
-	type statusResponse struct {
-		Status string `json:"status"`
+	renderJSON(w, &statusResponse{Success: true})
+}
+
+func setSyncStatus(w http.ResponseWriter, r *http.Request, status bool) {
+	params := parseParams(r)
+	varnamdConfig.setSyncStatus(params.langCode, status)
+	err := varnamdConfig.save()
+	if err != nil {
+		renderError(w, err)
+		return
 	}
-	renderJSON(w, &statusResponse{Status: "OK"})
+	renderJSON(w, &statusResponse{Success: true})
+}
+
+func enableSync(w http.ResponseWriter, r *http.Request) {
+	setSyncStatus(w, r, true)
+}
+
+func disableSync(w http.ResponseWriter, r *http.Request) {
+	setSyncStatus(w, r, false)
 }
 
 func transliterationHandler(w http.ResponseWriter, r *http.Request) {

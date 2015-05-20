@@ -25,12 +25,12 @@ var (
 // varnamd configurations
 // usually resides in $HOME/.varnamd/config on POSIX and APPDATA/.varnamd/config on Windows
 type config struct {
-	Upstream      string   `json:"upstream"`
-	SchemesToSync []string `json:"schemesToSync"`
+	Upstream      string          `json:"upstream"`
+	SchemesToSync map[string]bool `json:"schemesToSync"`
 }
 
 func initDefaultConfig() *config {
-	return &config{Upstream: "http://api.varnamproject.com", SchemesToSync: []string{}}
+	return &config{Upstream: "http://api.varnamproject.com", SchemesToSync: make(map[string]bool)}
 }
 
 func getConfigFilePath() string {
@@ -64,11 +64,11 @@ func loadConfigFromFile() *config {
 	return &c
 }
 
-func saveConfigToFile() error {
-	if varnamdConfig == nil {
-		panic("config is not initialized")
-	}
+func (c *config) setSyncStatus(langCode string, status bool) {
+	c.SchemesToSync[langCode] = status
+}
 
+func (c *config) save() error {
 	configFilePath := getConfigFilePath()
 	err := os.MkdirAll(path.Dir(configFilePath), 0777)
 	if err != nil {
@@ -81,7 +81,7 @@ func saveConfigToFile() error {
 	}
 	defer configFile.Close()
 
-	b, err := json.MarshalIndent(varnamdConfig, "", "\t")
+	b, err := json.MarshalIndent(c, "", "\t")
 	if err != nil {
 		return err
 	}
@@ -103,6 +103,7 @@ func init() {
 	flag.StringVar(&uiDir, "ui", "", "UI directory path")
 	flag.BoolVar(&enableInternalApis, "enable-internal-apis", false, "Enable internal APIs")
 	flag.BoolVar(&version, "version", false, "Print the version and exit")
+	varnamdConfig = loadConfigFromFile()
 }
 
 func main() {

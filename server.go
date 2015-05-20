@@ -54,6 +54,10 @@ func startDaemon() {
 	r.HandleFunc("/learn", learnHandler()).Methods("POST")
 	r.HandleFunc("/languages", languagesHandler).Methods("GET")
 	r.HandleFunc("/status", statusHandler).Methods("GET")
+	if enableInternalApis {
+		r.HandleFunc("/sync/{langCode}/enable", enableSync).Methods("POST")
+		r.HandleFunc("/sync/{langCode}/disable", disableSync).Methods("POST")
+	}
 
 	addUI(r)
 
