@@ -9,6 +9,7 @@ import (
 	"log"
 	"net/http"
 	"net/rpc"
+	"runtime"
 	"strconv"
 	"strings"
 	"time"
@@ -60,7 +61,9 @@ func recoverHandler(next http.Handler) http.Handler {
 	fn := func(w http.ResponseWriter, r *http.Request) {
 		defer func() {
 			if err := recover(); err != nil {
-				log.Printf("panic: %+v", err)
+				stack := make([]byte, 1024)
+				stack = stack[:runtime.Stack(stack, false)]
+				log.Printf("panic: %s\n%s", err, stack)
 				http.Error(w, http.StatusText(500), 500)
 			}
 		}()
