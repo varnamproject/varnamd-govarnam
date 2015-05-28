@@ -79,6 +79,8 @@ func loadConfigFromFile() *config {
 	configFilePath := getConfigFilePath()
 	configFile, err := os.Open(configFilePath)
 	if err != nil {
+		c := initDefaultConfig()
+		c.save()
 		return initDefaultConfig()
 	}
 	defer configFile.Close()
