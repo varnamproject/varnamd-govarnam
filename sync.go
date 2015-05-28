@@ -185,7 +185,7 @@ func downloadWords(langCode string, offset int) (totalWordsDownloaded int, downl
 	if err != nil {
 		return 0, "", err
 	}
-	downloadedFilePath, err = transformAndPersistWords(langCode, &response)
+	downloadedFilePath, err = transformAndPersistWords(langCode, offset, &response)
 	if err != nil {
 		log.Printf("Download was successful, but failed to persist to local learn queue. %s\n", err.Error())
 		return 0, "", err
@@ -194,9 +194,9 @@ func downloadWords(langCode string, offset int) (totalWordsDownloaded int, downl
 	return response.Count, downloadedFilePath, nil
 }
 
-func transformAndPersistWords(langCode string, dresp *downloadResponse) (string, error) {
+func transformAndPersistWords(langCode string, offset int, dresp *downloadResponse) (string, error) {
 	learnQueueDir := getLearnQueueDir(langCode)
-	targetFile, err := ioutil.TempFile(learnQueueDir, langCode)
+	targetFile, err := os.Create(path.Join(learnQueueDir, fmt.Sprintf("%s.%d", langCode, offset)))
 	if err != nil {
 		return "", err
 	}
