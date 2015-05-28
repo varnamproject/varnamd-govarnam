@@ -138,14 +138,14 @@ func learnFromFile(langCode, fileToLearn string) {
 		} else {
 			log.Printf("Learned from '%s'. TotalWords: %d, Failed: %d. Took %s\n", fileToLearn, learnStatus.TotalWords, learnStatus.Failed, end.Sub(start))
 		}
+
+		err = os.Remove(fileToLearn)
+		if err != nil {
+			log.Printf("Error deleting '%s'. %s\n", fileToLearn, err.Error())
+		}
+
 		return
 	})
-
-	err := os.Remove(fileToLearn)
-	if err != nil {
-		log.Printf("Error deleting '%s'. %s\n", fileToLearn, err.Error())
-	}
-
 }
 
 func downloadWordsAndUpdateOffset(langCode string, offset int) (string, error) {
