@@ -9,6 +9,7 @@ import (
 	"os"
 	"path"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/varnamproject/libvarnam-golang"
@@ -42,7 +43,12 @@ func (s *syncDispatcher) start() {
 		for {
 			select {
 			case <-s.ticker.C:
+				log.Println("---SYNC BEGIN---")
+				log.Printf("Config: %v\n", varnamdConfig)
+
 				syncWordsFromUpstream()
+
+				log.Println("---SYNC DONE---")
 			case <-s.quit:
 				s.ticker.Stop()
 				return
@@ -56,12 +62,10 @@ func (s *syncDispatcher) stop() {
 }
 
 func syncWordsFromUpstream() {
-	log.Printf("Starting to sync words from %s\n", varnamdConfig.Upstream)
 	for langCode := range varnamdConfig.SchemesToSync {
 		log.Printf("Sync: %s\n", langCode)
 		syncWordsFromUpstreamFor(langCode)
 	}
-	log.Printf("Finished sync words from %s\n", varnamdConfig.Upstream)
 }
 
 func syncWordsFromUpstreamFor(langCode string) {
@@ -71,55 +75,93 @@ func syncWordsFromUpstreamFor(langCode string) {
 		return
 	}
 
-	log.Printf("Corpus size: %d\n", corpusDetails.WordsCount)
-	filesToLearn := make(chan string, 10)
+	localFilesToLearn := make(chan string, 100)
+	downloadedFilesToLearn := make(chan string, 100)
 	done := make(chan bool)
+
+	// adding files which are remaining to learn in the local learn queue
+	go addFilesFromLocalLearnQueue(langCode, localFilesToLearn)
+	go downloadAllWords(langCode, corpusDetails.WordsCount, downloadedFilesToLearn)
 	go func() {
-		offset := getDownloadOffset(langCode)
-		log.Printf("Offset: %d\n", offset)
-		for offset < corpusDetails.WordsCount {
-			count, filePath, err := downloadWords(langCode, offset)
-			if err != nil {
-				log.Printf("Error downloading words for '%s'. %s\n", langCode, err.Error())
-				break
-			}
-
-			err = setDownloadOffset(langCode, offset+count)
-			if err != nil {
-				log.Printf("Error setting download offset for '%s'. %s\n", langCode, err.Error())
-				break
-			}
-
-			filesToLearn <- filePath
-			offset = getDownloadOffset(langCode)
-		}
-		log.Println("Local copy is upto date. No need to download from upstream")
-		close(filesToLearn)
-	}()
-
-	// Learn the downloaded files as and when it arrives on the channel
-	go func() {
-		for fileToLearn := range filesToLearn {
-			log.Printf("Learning from %s\n", fileToLearn)
-			getOrCreateHandler(langCode, func(handle *libvarnam.Varnam) (data interface{}, err error) {
-				learnStatus, err := handle.LearnFromFile(fileToLearn)
-				if err != nil {
-					log.Printf("Error learning from '%s'\n", err.Error())
-				} else {
-					log.Printf("Learned from '%s'. TotalWords: %d, Failed: %d\n", fileToLearn, learnStatus.TotalWords, learnStatus.Failed)
-				}
-				return
-			})
-
-			err = os.Remove(fileToLearn)
-			if err != nil {
-				log.Printf("Error deleting '%s'. %s\n", fileToLearn, err.Error())
-			}
-		}
+		learnAll(langCode, localFilesToLearn)
+		learnAll(langCode, downloadedFilesToLearn)
 		done <- true
 	}()
 
 	<-done
+}
+
+func addFilesFromLocalLearnQueue(langCode string, filesToLearn chan string) {
+	files := getFilesFromLearnQueue(langCode)
+	if files != nil {
+		log.Printf("Adding %d files to learn from local learn queue\n", len(files))
+		for _, f := range files {
+			filesToLearn <- f
+		}
+	} else {
+		log.Printf("Local learn queue for '%s' is empty", langCode)
+	}
+	close(filesToLearn)
+}
+
+func downloadAllWords(langCode string, corpusSize int, output chan string) {
+	for {
+		offset := getDownloadOffset(langCode)
+		log.Printf("Offset: %d\n", offset)
+		if offset >= corpusSize {
+			break
+		}
+		filePath, err := downloadWordsAndUpdateOffset(langCode, offset)
+		if err != nil {
+			break
+		}
+		output <- filePath
+	}
+	log.Println("Local copy is upto date. No need to download from upstream")
+	close(output)
+}
+
+func learnAll(langCode string, filesToLearn chan string) {
+	for fileToLearn := range filesToLearn {
+		learnFromFile(langCode, fileToLearn)
+	}
+}
+
+func learnFromFile(langCode, fileToLearn string) {
+	log.Printf("Learning from %s\n", fileToLearn)
+	start := time.Now()
+	getOrCreateHandler(langCode, func(handle *libvarnam.Varnam) (data interface{}, err error) {
+		learnStatus, err := handle.LearnFromFile(fileToLearn)
+		end := time.Now()
+		if err != nil {
+			log.Printf("Error learning from '%s'\n", err.Error())
+		} else {
+			log.Printf("Learned from '%s'. TotalWords: %d, Failed: %d. Took %s\n", fileToLearn, learnStatus.TotalWords, learnStatus.Failed, end.Sub(start))
+		}
+		return
+	})
+
+	err := os.Remove(fileToLearn)
+	if err != nil {
+		log.Printf("Error deleting '%s'. %s\n", fileToLearn, err.Error())
+	}
+
+}
+
+func downloadWordsAndUpdateOffset(langCode string, offset int) (string, error) {
+	count, filePath, err := downloadWords(langCode, offset)
+	if err != nil {
+		log.Printf("Error downloading words for '%s'. %s\n", langCode, err.Error())
+		return "", err
+	}
+
+	err = setDownloadOffset(langCode, offset+count)
+	if err != nil {
+		log.Printf("Error setting download offset for '%s'. %s\n", langCode, err.Error())
+		return "", err
+	}
+
+	return filePath, nil
 }
 
 func getCorpusDetails(langCode string) (*libvarnam.CorpusDetails, error) {
@@ -130,6 +172,7 @@ func getCorpusDetails(langCode string) (*libvarnam.CorpusDetails, error) {
 	if err != nil {
 		return nil, err
 	}
+	log.Printf("Corpus size: %d\n", corpusDetails.WordsCount)
 	return &corpusDetails, nil
 }
 
@@ -168,6 +211,23 @@ func transformAndPersistWords(langCode string, dresp *downloadResponse) (string,
 	return targetFile.Name(), nil
 }
 
+func getFilesFromLearnQueue(langCode string) []string {
+	var files []string
+	learnQueueDir := getLearnQueueDir(langCode)
+	queueContents, err := ioutil.ReadDir(learnQueueDir)
+	if err != nil {
+		return nil
+	}
+
+	for _, c := range queueContents {
+		if !c.IsDir() {
+			files = append(files, path.Join(learnQueueDir, c.Name()))
+		}
+	}
+
+	return files
+}
+
 func getJSONResponse(url string, output interface{}) error {
 	log.Printf("GET: '%s'\n", url)
 	resp, err := http.Get(url)
@@ -190,7 +250,7 @@ func getDownloadOffset(langCode string) int {
 		return 0
 	}
 
-	offset, err := strconv.Atoi(string(content))
+	offset, err := strconv.Atoi(strings.TrimSpace(string(content)))
 	if err != nil {
 		return 0
 	}

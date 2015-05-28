@@ -58,6 +58,17 @@ func getConfigDir() string {
 	}
 }
 
+func getLogsDir() string {
+	d := getConfigDir()
+	logsDir := path.Join(d, "logs")
+	err := os.MkdirAll(logsDir, 0777)
+	if err != nil {
+		panic(err)
+	}
+
+	return logsDir
+}
+
 func getConfigFilePath() string {
 	configDir := getConfigDir()
 	configFilePath := path.Join(configDir, "config.json")
@@ -112,6 +123,18 @@ func (c *config) save() error {
 	}
 
 	return nil
+}
+
+func redirectLogToFile() {
+	year, month, day := time.Now().Date()
+	logfile := path.Join(getLogsDir(), fmt.Sprintf("%d-%d-%d.log", year, month, day))
+	f, err := os.OpenFile(logfile, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+	if err != nil {
+		panic(err)
+	}
+	defer f.Close()
+
+	log.SetOutput(f)
 }
 
 func init() {
