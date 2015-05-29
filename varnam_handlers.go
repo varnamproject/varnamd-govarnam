@@ -3,12 +3,13 @@ package main
 import (
 	"database/sql"
 	"errors"
-	"github.com/golang/groupcache"
-	_ "github.com/mattn/go-sqlite3"
-	"github.com/varnamproject/libvarnam-golang"
 	"log"
 	"sync"
 	"time"
+
+	"github.com/golang/groupcache"
+	_ "github.com/mattn/go-sqlite3"
+	"github.com/varnamproject/libvarnam-golang"
 )
 
 type word struct {
@@ -84,7 +85,14 @@ func getWords(schemeIdentifier string, downloadStart int) ([]*word, error) {
 	}
 	defer db.Close()
 
-	rows, err := db.Query("select id, word, confidence from words limit 5000 offset ?;", downloadStart)
+	// Making an index for all learned words so that download is faster
+	// this needs to be removed when there is more clarity on how learned words needs to be handled
+	_, err = db.Exec("create index if not exists varnamd_download_only_learned on patterns_content (learned) where learned = 1;")
+	if err != nil {
+		return nil, err
+	}
+
+	rows, err := db.Query("select id, word, confidence from words where id in (select distinct(word_id) from patterns_content where learned = 1) order by id asc limit 5000 offset ?;", downloadStart)
 	if err != nil {
 		return nil, err
 	}
