@@ -17,11 +17,12 @@ import (
 
 type syncDispatcher struct {
 	quit   chan struct{}
+	force  chan bool // Send a TRUE message so that execution begins immediatly
 	ticker *time.Ticker
 }
 
 func newSyncDispatcher(intervalInSeconds time.Duration) *syncDispatcher {
-	return &syncDispatcher{ticker: time.NewTicker(intervalInSeconds), quit: make(chan struct{})}
+	return &syncDispatcher{ticker: time.NewTicker(intervalInSeconds), force: make(chan bool), quit: make(chan struct{})}
 }
 
 func (s *syncDispatcher) start() {
@@ -43,12 +44,9 @@ func (s *syncDispatcher) start() {
 		for {
 			select {
 			case <-s.ticker.C:
-				log.Println("---SYNC BEGIN---")
-				log.Printf("Config: %v\n", varnamdConfig)
-
-				syncWordsFromUpstream()
-
-				log.Println("---SYNC DONE---")
+				performSync()
+			case <-s.force:
+				performSync()
 			case <-s.quit:
 				s.ticker.Stop()
 				return
@@ -59,6 +57,19 @@ func (s *syncDispatcher) start() {
 
 func (s *syncDispatcher) stop() {
 	close(s.quit)
+}
+
+func (s *syncDispatcher) runNow() {
+	s.force <- true
+}
+
+func performSync() {
+	log.Println("---SYNC BEGIN---")
+	log.Printf("Config: %v\n", varnamdConfig)
+
+	syncWordsFromUpstream()
+
+	log.Println("---SYNC DONE---")
 }
 
 func syncWordsFromUpstream() {

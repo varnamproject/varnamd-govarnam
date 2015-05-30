@@ -162,6 +162,7 @@ func main() {
 	if syncWords {
 		sync := newSyncDispatcher(varnamdConfig.SyncIntervalInSecs * time.Second)
 		sync.start()
+		sync.runNow() // Run immediatly when starting varnamd
 	}
 	startServer()
 }
