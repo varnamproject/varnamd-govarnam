@@ -21,6 +21,7 @@ var (
 	uiDir              string
 	enableInternalApis bool    // internal APIs are not exposed to public
 	syncWords          bool    // when true, sync won't be performed. Useful when running on a top level server where no upstream can be configured
+	logToFile          bool    // logs will be written to file when true
 	varnamdConfig      *config // config instance used across the application
 )
 
@@ -134,8 +135,6 @@ func redirectLogToFile() {
 	if err != nil {
 		panic(err)
 	}
-	defer f.Close()
-
 	log.SetOutput(f)
 }
 
@@ -148,6 +147,7 @@ func init() {
 	flag.StringVar(&uiDir, "ui", "", "UI directory path")
 	flag.BoolVar(&enableInternalApis, "enable-internal-apis", false, "Enable internal APIs")
 	flag.BoolVar(&syncWords, "sync-words", true, "Enable/Disable word synchronization")
+	flag.BoolVar(&logToFile, "log-to-file", false, "If true, logs will be written to a file")
 	flag.BoolVar(&version, "version", false, "Print the version and exit")
 	varnamdConfig = loadConfigFromFile()
 }
@@ -158,6 +158,9 @@ func main() {
 	if version {
 		fmt.Println(VERSION)
 		os.Exit(0)
+	}
+	if logToFile {
+		redirectLogToFile()
 	}
 	if syncWords {
 		sync := newSyncDispatcher(varnamdConfig.SyncIntervalInSecs * time.Second)
