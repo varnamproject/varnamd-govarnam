@@ -80,7 +80,8 @@ func syncWordsFromUpstreamFor(langCode string) {
 	done := make(chan bool)
 
 	// adding files which are remaining to learn in the local learn queue
-	go addFilesFromLocalLearnQueue(langCode, localFilesToLearn)
+	remainingFilesFromLastDownload := getFilesFromLearnQueue(langCode)
+	go addFilesFromLocalLearnQueue(langCode, remainingFilesFromLastDownload, localFilesToLearn)
 	go downloadAllWords(langCode, corpusDetails.WordsCount, downloadedFilesToLearn)
 	go func() {
 		learnAll(langCode, localFilesToLearn)
@@ -91,8 +92,7 @@ func syncWordsFromUpstreamFor(langCode string) {
 	<-done
 }
 
-func addFilesFromLocalLearnQueue(langCode string, filesToLearn chan string) {
-	files := getFilesFromLearnQueue(langCode)
+func addFilesFromLocalLearnQueue(langCode string, files []string, filesToLearn chan string) {
 	if files != nil {
 		log.Printf("Adding %d files to learn from local learn queue\n", len(files))
 		for _, f := range files {
