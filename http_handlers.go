@@ -11,6 +11,7 @@ import (
 	"runtime"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/golang/groupcache"
 	"github.com/gorilla/mux"
@@ -113,7 +114,16 @@ func getWord(r *http.Request) string {
 }
 
 func statusHandler(w http.ResponseWriter, r *http.Request) {
-	renderJSON(w, &statusResponse{Success: true})
+	uptime := time.Now().Sub(startedAt)
+	resp := struct {
+		Version string `json:"version"`
+		Uptime  string `json:"uptime"`
+	}{
+		VERSION,
+		uptime.String(),
+	}
+
+	renderJSON(w, resp)
 }
 
 func setSyncStatus(w http.ResponseWriter, r *http.Request, status bool) {

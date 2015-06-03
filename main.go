@@ -21,6 +21,7 @@ var (
 	syncWords          bool    // when true, sync won't be performed. Useful when running on a top level server where no upstream can be configured
 	logToFile          bool    // logs will be written to file when true
 	varnamdConfig      *config // config instance used across the application
+	startedAt          time.Time
 )
 
 // varnamd configurations
@@ -151,6 +152,7 @@ func init() {
 func main() {
 	runtime.GOMAXPROCS(runtime.NumCPU())
 	flag.Parse()
+	startedAt = time.Now()
 	if version {
 		fmt.Println(VERSION)
 		os.Exit(0)
