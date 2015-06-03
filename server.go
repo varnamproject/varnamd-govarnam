@@ -37,7 +37,9 @@ func startLearnOnlyDaemon() {
 }
 
 func launchLearnOnlyProcess() {
-	cmd := exec.Command(os.Args[0], "-learn-only", "-lp", fmt.Sprintf("%d", learnPort))
+	cmd := exec.Command(os.Args[0], "-learn-only", "-sync-words", "false", "-lp", fmt.Sprintf("%d", learnPort))
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
 	err := cmd.Start()
 	if err != nil {
 		log.Fatalln("Unable to launch learn only process", err)

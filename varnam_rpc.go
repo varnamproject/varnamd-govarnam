@@ -2,13 +2,14 @@ package main
 
 import (
 	"errors"
-	"github.com/varnamproject/libvarnam-golang"
 	"log"
+
+	"github.com/varnamproject/libvarnam-golang"
 )
 
 type Args struct {
 	LangCode string `json:"lang"`
-	Word     string `json:"text"`
+	Word     string `json:"word"`
 }
 
 type VarnamRPC struct{}
@@ -40,6 +41,9 @@ func initLearnChannels() {
 
 func listenForWords(lang string, handle *libvarnam.Varnam) {
 	for word := range learnChannels[lang] {
-		handle.Learn(word)
+		err := handle.Learn(word)
+		if err != nil {
+			log.Printf("Failed to learn %s. %s\n", word, err.Error())
+		}
 	}
 }
