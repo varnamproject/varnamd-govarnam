@@ -8,11 +8,9 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"net/rpc"
 	"runtime"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/golang/groupcache"
 	"github.com/gorilla/mux"
@@ -233,38 +231,19 @@ func languagesHandler(w http.ResponseWriter, r *http.Request) {
 	renderJSON(w, schemeDetails)
 }
 
-func repeatDial(times int) (client *rpc.Client, err error) {
-	for times != 0 {
-		client, err = rpc.DialHTTP("tcp", fmt.Sprintf("127.0.0.1:%d", learnPort))
-		if err == nil {
-			return
-		}
-		<-time.After(1 * time.Second)
-		times--
+func learnHandler(w http.ResponseWriter, r *http.Request) {
+	decoder := json.NewDecoder(r.Body)
+	var args Args
+	if e := decoder.Decode(&args); e != nil {
+		renderError(w, e)
+		return
 	}
-	return client, err
-}
 
-func learnHandler() http.HandlerFunc {
-	client, err := repeatDial(20)
-	if err != nil || client == nil {
-		log.Fatalln("Unable to establish connection to learn only server:", err)
+	ch, ok := learnChannels[args.LangCode]
+	if !ok {
+		renderError(w, errors.New("Unable to find language"))
+		return
 	}
-	log.Printf("Connected to learn-only server at %d\n", learnPort)
-	return func(w http.ResponseWriter, r *http.Request) {
-		decoder := json.NewDecoder(r.Body)
-		var args Args
-		if e := decoder.Decode(&args); e != nil {
-			log.Println("Error in decoding ", e)
-			renderError(w, e)
-			return
-		}
-		var reply bool
-		if err := client.Call("VarnamRPC.Learn", &args, &reply); err != nil {
-			log.Println("Error in RPC ", err)
-			renderError(w, err)
-			return
-		}
-		renderJSON(w, "success")
-	}
+	go func(word string) { ch <- word }(args.Word)
+	renderJSON(w, "success")
 }

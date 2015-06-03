@@ -1,7 +1,6 @@
 package main
 
 import (
-	"errors"
 	"log"
 
 	"github.com/varnamproject/libvarnam-golang"
@@ -10,17 +9,6 @@ import (
 type Args struct {
 	LangCode string `json:"lang"`
 	Word     string `json:"word"`
-}
-
-type VarnamRPC struct{}
-
-func (v *VarnamRPC) Learn(args *Args, reply *bool) error {
-	ch, ok := learnChannels[args.LangCode]
-	if !ok {
-		return errors.New("Unable to find language")
-	}
-	go func(word string) { ch <- word }(args.Word)
-	return nil
 }
 
 var (
