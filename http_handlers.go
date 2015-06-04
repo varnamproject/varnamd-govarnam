@@ -126,25 +126,6 @@ func statusHandler(w http.ResponseWriter, r *http.Request) {
 	renderJSON(w, resp)
 }
 
-func setSyncStatus(w http.ResponseWriter, r *http.Request, status bool) {
-	params := parseParams(r)
-	varnamdConfig.setSyncStatus(params.langCode, status)
-	err := varnamdConfig.save()
-	if err != nil {
-		renderError(w, err)
-		return
-	}
-	renderJSON(w, &statusResponse{Success: true})
-}
-
-func enableSync(w http.ResponseWriter, r *http.Request) {
-	setSyncStatus(w, r, true)
-}
-
-func disableSync(w http.ResponseWriter, r *http.Request) {
-	setSyncStatus(w, r, false)
-}
-
 func transliterationHandler(w http.ResponseWriter, r *http.Request) {
 	langCode, word := getLanguageAndWord(r)
 	words, err := transliterate(langCode, word)

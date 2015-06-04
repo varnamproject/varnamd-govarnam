@@ -28,6 +28,15 @@ var (
 	cacheGroups      = make(map[string]*groupcache.Group)
 )
 
+func isValidSchemeIdentifier(id string) bool {
+	for _, scheme := range schemeDetails {
+		if scheme.Identifier == id {
+			return true
+		}
+	}
+	return false
+}
+
 func initLanguageChannels() {
 	languageChannels = make(map[string]chan *libvarnam.Varnam)
 	channelsCount = make(map[string]int)

@@ -31,7 +31,7 @@ func (s *syncDispatcher) start() {
 		fmt.Printf("Failed to create sync metadata directory. Sync will be disabled.\nActual error: %s\n", err.Error())
 		return
 	}
-	for s := range varnamdConfig.SchemesToSync {
+	for s := range varnamdConfig.schemesToDownload {
 		// download cache directory for each of the languages
 		err = createLearnQueueDir(s)
 		if err != nil {
@@ -73,7 +73,7 @@ func performSync() {
 }
 
 func syncWordsFromUpstream() {
-	for langCode := range varnamdConfig.SchemesToSync {
+	for langCode := range varnamdConfig.schemesToDownload {
 		log.Printf("Sync: %s\n", langCode)
 		syncWordsFromUpstreamFor(langCode)
 	}
@@ -176,7 +176,7 @@ func downloadWordsAndUpdateOffset(langCode string, offset int) (string, error) {
 }
 
 func getCorpusDetails(langCode string) (*libvarnam.CorpusDetails, error) {
-	url := fmt.Sprintf("%s/meta/%s", varnamdConfig.Upstream, langCode)
+	url := fmt.Sprintf("%s/meta/%s", varnamdConfig.upstream, langCode)
 	log.Printf("Fetching corpus details for '%s'\n", langCode)
 	var corpusDetails libvarnam.CorpusDetails
 	err := getJSONResponse(url, &corpusDetails)
@@ -190,7 +190,7 @@ func getCorpusDetails(langCode string) (*libvarnam.CorpusDetails, error) {
 // Downloads words from upstream starting from the specified offset and stores it locally in the learn queue
 // Returns the number of words downloaded, local file path and error if any
 func downloadWords(langCode string, offset int) (totalWordsDownloaded int, downloadedFilePath string, err error) {
-	url := fmt.Sprintf("%s/download/%s/%d", varnamdConfig.Upstream, langCode, offset)
+	url := fmt.Sprintf("%s/download/%s/%d", varnamdConfig.upstream, langCode, offset)
 	var response downloadResponse
 	err = getJSONResponse(url, &response)
 	if err != nil {

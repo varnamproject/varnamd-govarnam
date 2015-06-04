@@ -1,53 +1,54 @@
 package main
 
 import (
-	"encoding/json"
 	"flag"
 	"fmt"
 	"log"
 	"os"
 	"path"
 	"runtime"
+	"strings"
 	"time"
 )
 
 var (
-	port               int
-	version            bool
-	maxHandleCount     int
-	host               string
-	uiDir              string
-	enableInternalApis bool    // internal APIs are not exposed to public
-	syncWords          bool    // when true, sync won't be performed. Useful when running on a top level server where no upstream can be configured
-	logToFile          bool    // logs will be written to file when true
-	varnamdConfig      *config // config instance used across the application
-	startedAt          time.Time
+	port                   int
+	version                bool
+	maxHandleCount         int
+	host                   string
+	uiDir                  string
+	enableInternalApis     bool    // internal APIs are not exposed to public
+	logToFile              bool    // logs will be written to file when true
+	varnamdConfig          *config // config instance used across the application
+	startedAt              time.Time
+	downloadEnabledSchemes string // comma separated list of scheme identifier for which download will be performed
+	syncIntervalInSecs     int
+	upstreamURL            string
 )
 
 // varnamd configurations
-// usually resides in $HOME/.varnamd/config on POSIX and APPDATA/.varnamd/config on Windows
+// this is populated from various command line flags
 type config struct {
-	Upstream           string          `json:"upstream"`
-	SchemesToSync      map[string]bool `json:"schemesToSync"`
-	SyncIntervalInSecs time.Duration   `json:syncIntervalInSecs`
+	upstream           string
+	schemesToDownload  map[string]bool
+	syncIntervalInSecs time.Duration
 }
 
-func initDefaultConfig() *config {
-	c := &config{}
-	c.setDefaultsForBlankValues()
-	return c
-}
+func initConfig() *config {
+	toDownload := make(map[string]bool)
+	schemes := strings.Split(downloadEnabledSchemes, ",")
+	for _, scheme := range schemes {
+		s := strings.TrimSpace(scheme)
+		if s != "" {
+			if !isValidSchemeIdentifier(s) {
+				panic(fmt.Sprintf("%s is not a valid libvarnam supported scheme", s))
+			}
+			toDownload[s] = true
+		}
+	}
 
-func (c *config) setDefaultsForBlankValues() {
-	if c.Upstream == "" {
-		c.Upstream = "http://api.varnamproject.com"
-	}
-	if c.SchemesToSync == nil {
-		c.SchemesToSync = make(map[string]bool)
-	}
-	if c.SyncIntervalInSecs == 0 {
-		c.SyncIntervalInSecs = 30
-	}
+	return &config{upstream: upstreamURL, schemesToDownload: toDownload,
+		syncIntervalInSecs: time.Duration(syncIntervalInSecs)}
 }
 
 func getConfigDir() string {
@@ -69,64 +70,6 @@ func getLogsDir() string {
 	return logsDir
 }
 
-func getConfigFilePath() string {
-	configDir := getConfigDir()
-	configFilePath := path.Join(configDir, "config.json")
-	return configFilePath
-}
-
-func loadConfigFromFile() *config {
-	configFilePath := getConfigFilePath()
-	configFile, err := os.Open(configFilePath)
-	if err != nil {
-		c := initDefaultConfig()
-		c.save()
-		return initDefaultConfig()
-	}
-	defer configFile.Close()
-
-	jsonDecoder := json.NewDecoder(configFile)
-	var c config
-	err = jsonDecoder.Decode(&c)
-	if err != nil {
-		log.Printf("%s is malformed. Using default config instead\n", configFilePath)
-		return initDefaultConfig()
-	}
-
-	c.setDefaultsForBlankValues()
-	return &c
-}
-
-func (c *config) setSyncStatus(langCode string, status bool) {
-	c.SchemesToSync[langCode] = status
-}
-
-func (c *config) save() error {
-	configFilePath := getConfigFilePath()
-	err := os.MkdirAll(path.Dir(configFilePath), 0777)
-	if err != nil {
-		return err
-	}
-
-	configFile, err := os.Create(configFilePath)
-	if err != nil {
-		return err
-	}
-	defer configFile.Close()
-
-	b, err := json.MarshalIndent(c, "", "\t")
-	if err != nil {
-		return err
-	}
-
-	_, err = configFile.Write(b)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
 func redirectLogToFile() {
 	year, month, day := time.Now().Date()
 	logfile := path.Join(getLogsDir(), fmt.Sprintf("%d-%d-%d.log", year, month, day))
@@ -143,15 +86,21 @@ func init() {
 	flag.StringVar(&host, "host", "", "Host for the varnam daemon server")
 	flag.StringVar(&uiDir, "ui", "", "UI directory path")
 	flag.BoolVar(&enableInternalApis, "enable-internal-apis", false, "Enable internal APIs")
-	flag.BoolVar(&syncWords, "sync-words", true, "Enable/Disable word synchronization")
+	flag.StringVar(&upstreamURL, "upstream", "http://api.varnamproject.com", "Provide an upstream server")
+	flag.StringVar(&downloadEnabledSchemes, "enable-download", "", "Comma separated language identifier for which varnamd will download words from upstream")
+	flag.IntVar(&syncIntervalInSecs, "sync-interval", 30, "Download interval in seconds")
 	flag.BoolVar(&logToFile, "log-to-file", false, "If true, logs will be written to a file")
 	flag.BoolVar(&version, "version", false, "Print the version and exit")
-	varnamdConfig = loadConfigFromFile()
+}
+
+func syncRequired() bool {
+	return len(varnamdConfig.schemesToDownload) > 0
 }
 
 func main() {
 	runtime.GOMAXPROCS(runtime.NumCPU())
 	flag.Parse()
+	varnamdConfig = initConfig()
 	startedAt = time.Now()
 	if version {
 		fmt.Println(VERSION)
@@ -160,8 +109,8 @@ func main() {
 	if logToFile {
 		redirectLogToFile()
 	}
-	if syncWords {
-		sync := newSyncDispatcher(varnamdConfig.SyncIntervalInSecs * time.Second)
+	if syncRequired() {
+		sync := newSyncDispatcher(varnamdConfig.syncIntervalInSecs * time.Second)
 		sync.start()
 		sync.runNow() // Run immediatly when starting varnamd
 	}
