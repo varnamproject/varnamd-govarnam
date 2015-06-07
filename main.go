@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"flag"
 	"fmt"
 	"log"
@@ -24,6 +25,7 @@ var (
 	downloadEnabledSchemes string // comma separated list of scheme identifier for which download will be performed
 	syncIntervalInSecs     int
 	upstreamURL            string
+	syncDispatcherRunning  bool
 )
 
 // varnamd configurations
@@ -49,6 +51,21 @@ func initConfig() *config {
 
 	return &config{upstream: upstreamURL, schemesToDownload: toDownload,
 		syncIntervalInSecs: time.Duration(syncIntervalInSecs)}
+}
+
+func (c *config) setDownloadStatus(langCode string, status bool) error {
+	if !isValidSchemeIdentifier(langCode) {
+		return errors.New(fmt.Sprintf("%s is not a valid libvarnam supported scheme", langCode))
+	}
+
+	c.schemesToDownload[langCode] = status
+	if status {
+		// when varnamd was started without any langcodes to sync, the dispatcher won't be running
+		// in that case, we need to start the dispatcher since we have a new lang code to download now
+		startSyncDispatcher()
+	}
+
+	return nil
 }
 
 func getConfigDir() string {
@@ -97,6 +114,16 @@ func syncRequired() bool {
 	return len(varnamdConfig.schemesToDownload) > 0
 }
 
+// Starts the sync process only if it is not running
+func startSyncDispatcher() {
+	if syncRequired() && !syncDispatcherRunning {
+		sync := newSyncDispatcher(varnamdConfig.syncIntervalInSecs * time.Second)
+		sync.start()
+		sync.runNow() // run one round of sync immediatly rather than waiting for the next interval to occur
+		syncDispatcherRunning = true
+	}
+}
+
 func main() {
 	runtime.GOMAXPROCS(runtime.NumCPU())
 	flag.Parse()
@@ -109,10 +136,7 @@ func main() {
 	if logToFile {
 		redirectLogToFile()
 	}
-	if syncRequired() {
-		sync := newSyncDispatcher(varnamdConfig.syncIntervalInSecs * time.Second)
-		sync.start()
-		sync.runNow() // Run immediatly when starting varnamd
-	}
+
+	startSyncDispatcher()
 	startDaemon()
 }

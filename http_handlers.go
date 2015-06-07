@@ -238,3 +238,21 @@ func learnHandler(w http.ResponseWriter, r *http.Request) {
 	go func(word string) { ch <- word }(args.Word)
 	renderJSON(w, "success")
 }
+
+func toggleDownloadEnabledStatus(w http.ResponseWriter, r *http.Request, status bool) {
+	params := parseParams(r)
+	err := varnamdConfig.setDownloadStatus(params.langCode, status)
+	if err != nil {
+		renderError(w, err)
+	} else {
+		renderJSON(w, &statusResponse{Success: true})
+	}
+}
+
+func enableDownload(w http.ResponseWriter, r *http.Request) {
+	toggleDownloadEnabledStatus(w, r, true)
+}
+
+func disableDownload(w http.ResponseWriter, r *http.Request) {
+	toggleDownloadEnabledStatus(w, r, false)
+}
