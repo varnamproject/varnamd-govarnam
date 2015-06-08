@@ -178,13 +178,13 @@ func downloadWordsAndUpdateOffset(langCode string, offset int) (string, error) {
 func getCorpusDetails(langCode string) (*libvarnam.CorpusDetails, error) {
 	url := fmt.Sprintf("%s/meta/%s", varnamdConfig.upstream, langCode)
 	log.Printf("Fetching corpus details for '%s'\n", langCode)
-	var corpusDetails libvarnam.CorpusDetails
-	err := getJSONResponse(url, &corpusDetails)
+	var m metaResponse
+	err := getJSONResponse(url, &m)
 	if err != nil {
 		return nil, err
 	}
-	log.Printf("Corpus size: %d\n", corpusDetails.WordsCount)
-	return &corpusDetails, nil
+	log.Printf("Corpus size: %d\n", m.Result.WordsCount)
+	return m.Result, nil
 }
 
 // Downloads words from upstream starting from the specified offset and stores it locally in the learn queue

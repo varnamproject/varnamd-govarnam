@@ -18,18 +18,36 @@ import (
 	"github.com/varnamproject/libvarnam-golang"
 )
 
-type statusResponse struct {
-	Success bool `json:"success"`
+type standardResponse struct {
+	Success bool   `json:"success"`
+	Error   string `json:"error"`
+	At      string `json:"at"`
 }
 
-type varnamResponse struct {
+func newStandardResponse(err string) standardResponse {
+	s := standardResponse{Success: true, Error: "", At: time.Now().UTC().String()}
+	if err != "" {
+		s.Error = err
+		s.Success = false
+	}
+	return s
+}
+
+type transliterationResponse struct {
+	standardResponse
 	Result []string `json:"result"`
 	Input  string   `json:"input"`
+}
+
+type metaResponse struct {
+	Result *libvarnam.CorpusDetails `json:"result"`
+	standardResponse
 }
 
 type downloadResponse struct {
 	Count int     `json:"count"`
 	Words []*word `json:"words"`
+	standardResponse
 }
 
 type requestParams struct {
@@ -75,11 +93,7 @@ func renderError(w http.ResponseWriter, err error) {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		errorData := struct {
-			Error string `json:"error"`
-		}{
-			err.Error(),
-		}
+		errorData := newStandardResponse(err.Error())
 		json.NewEncoder(w).Encode(errorData)
 	}
 }
@@ -118,9 +132,11 @@ func statusHandler(w http.ResponseWriter, r *http.Request) {
 	resp := struct {
 		Version string `json:"version"`
 		Uptime  string `json:"uptime"`
+		standardResponse
 	}{
 		VERSION,
 		uptime.String(),
+		newStandardResponse(""),
 	}
 
 	renderJSON(w, resp)
@@ -132,7 +148,8 @@ func transliterationHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		renderError(w, err)
 	} else {
-		renderJSON(w, varnamResponse{Result: words.([]string), Input: word})
+		renderJSON(w,
+			transliterationResponse{standardResponse: newStandardResponse(""), Result: words.([]string), Input: word})
 	}
 }
 
@@ -142,7 +159,14 @@ func reverseTransliterationHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		renderError(w, err)
 	} else {
-		renderJSON(w, map[string]string{"result": result.(string)})
+		response := struct {
+			standardResponse
+			Result string `json:"result"`
+		}{
+			newStandardResponse(""),
+			result.(string),
+		}
+		renderJSON(w, response)
 	}
 }
 
@@ -154,7 +178,7 @@ func metadataHandler(w http.ResponseWriter, r *http.Request) {
 			renderError(w, err)
 			return
 		}
-		renderJSON(w, details)
+		renderJSON(w, &metaResponse{Result: details, standardResponse: newStandardResponse("")})
 		return
 	})
 }
@@ -177,7 +201,7 @@ func downloadHandler(w http.ResponseWriter, r *http.Request) {
 			return err
 		}
 
-		response := downloadResponse{Count: len(words), Words: words}
+		response := downloadResponse{Count: len(words), Words: words, standardResponse: newStandardResponse("")}
 		b, err := json.Marshal(response)
 		if err != nil {
 			return err
@@ -245,7 +269,7 @@ func toggleDownloadEnabledStatus(w http.ResponseWriter, r *http.Request, status 
 	if err != nil {
 		renderError(w, err)
 	} else {
-		renderJSON(w, &statusResponse{Success: true})
+		renderJSON(w, newStandardResponse(""))
 	}
 }
 
