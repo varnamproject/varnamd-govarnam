@@ -18,7 +18,10 @@ var (
 	maxHandleCount         int
 	host                   string
 	uiDir                  string
-	enableInternalApis     bool    // internal APIs are not exposed to public
+	enableInternalApis     bool // internal APIs are not exposed to public
+	enableSSL              bool
+	certFilePath           string
+	keyFilePath            string
 	logToFile              bool    // logs will be written to file when true
 	varnamdConfig          *config // config instance used across the application
 	startedAt              time.Time
@@ -103,6 +106,9 @@ func init() {
 	flag.StringVar(&host, "host", "", "Host for the varnam daemon server")
 	flag.StringVar(&uiDir, "ui", "", "UI directory path")
 	flag.BoolVar(&enableInternalApis, "enable-internal-apis", false, "Enable internal APIs")
+	flag.BoolVar(&enableSSL, "enable-ssl", false, "Enables SSL")
+	flag.StringVar(&certFilePath, "cert-file-path", "", "Certificate file path")
+	flag.StringVar(&keyFilePath, "key-file-path", "", "Key file path")
 	flag.StringVar(&upstreamURL, "upstream", "http://api.varnamproject.com", "Provide an upstream server")
 	flag.StringVar(&downloadEnabledSchemes, "enable-download", "", "Comma separated language identifier for which varnamd will download words from upstream")
 	flag.IntVar(&syncIntervalInSecs, "sync-interval", 30, "Download interval in seconds")

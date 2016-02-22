@@ -29,8 +29,14 @@ func startDaemon() {
 
 	address := fmt.Sprintf("%s:%d", host, port)
 	log.Printf("Starting server at %s", address)
-	if err := http.ListenAndServe(address, recoverHandler(corsHandler(r))); err != nil {
-		log.Fatalln(err)
+	if enableSSL {
+		if err := http.ListenAndServeTLS(address, certFilePath, keyFilePath, recoverHandler(corsHandler(r))); err != nil {
+			log.Fatalln(err)
+		}
+	} else {
+		if err := http.ListenAndServe(address, recoverHandler(corsHandler(r))); err != nil {
+			log.Fatalln(err)
+		}
 	}
 }
 
