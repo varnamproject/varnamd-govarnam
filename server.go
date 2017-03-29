@@ -28,7 +28,7 @@ func startDaemon() {
 	addUI(r)
 
 	address := fmt.Sprintf("%s:%d", host, port)
-	log.Printf("Starting server at %s", address)
+	log.Printf("Listening on %s", address)
 	if enableSSL {
 		if err := http.ListenAndServeTLS(address, certFilePath, keyFilePath, recoverHandler(corsHandler(r))); err != nil {
 			log.Fatalln(err)

@@ -112,7 +112,7 @@ func init() {
 	flag.StringVar(&upstreamURL, "upstream", "http://api.varnamproject.com", "Provide an upstream server")
 	flag.StringVar(&downloadEnabledSchemes, "enable-download", "", "Comma separated language identifier for which varnamd will download words from upstream")
 	flag.IntVar(&syncIntervalInSecs, "sync-interval", 30, "Download interval in seconds")
-	flag.BoolVar(&logToFile, "log-to-file", false, "If true, logs will be written to a file")
+	flag.BoolVar(&logToFile, "log-to-file", true, "If true, logs will be written to a file")
 	flag.BoolVar(&version, "version", false, "Print the version and exit")
 }
 
@@ -142,6 +142,8 @@ func main() {
 	if logToFile {
 		redirectLogToFile()
 	}
+
+	log.Printf("varnamd %s", VERSION)
 
 	startSyncDispatcher()
 	startDaemon()
