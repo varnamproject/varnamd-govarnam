@@ -3,7 +3,6 @@ package main
 import (
 	"database/sql"
 	"errors"
-	"fmt"
 	"log"
 	"sync"
 	"time"
@@ -102,8 +101,8 @@ func getWords(schemeIdentifier string, downloadStart int) ([]*word, error) {
 		return nil, err
 	}
 
-	q := fmt.Sprintf("select id, word, confidence from words where id in (select distinct(word_id) from patterns_content where learned = 1) order by id asc limit %d offset ?;", DOWNLOAD_PAGE_SIZE)
-	rows, err := db.Query(q, downloadStart)
+	q := "select id, word, confidence from words where id in (select distinct(word_id) from patterns_content where learned = 1) order by id asc limit ? offset ?;"
+	rows, err := db.Query(q, DOWNLOAD_PAGE_SIZE, downloadStart)
 	if err != nil {
 		return nil, err
 	}
