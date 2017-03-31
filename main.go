@@ -136,14 +136,14 @@ func main() {
 	varnamdConfig = initConfig()
 	startedAt = time.Now()
 	if version {
-		fmt.Println(VERSION)
+		fmt.Println(varnamdVersion)
 		os.Exit(0)
 	}
 	if logToFile {
 		redirectLogToFile()
 	}
 
-	log.Printf("varnamd %s", VERSION)
+	log.Printf("varnamd %s", varnamdVersion)
 
 	startSyncDispatcher()
 	startDaemon()

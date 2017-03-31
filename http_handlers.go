@@ -142,7 +142,7 @@ func statusHandler(w http.ResponseWriter, r *http.Request) {
 		Uptime  string `json:"uptime"`
 		standardResponse
 	}{
-		VERSION,
+		varnamdVersion,
 		uptime.String(),
 		newStandardResponse(""),
 	}
@@ -222,7 +222,7 @@ func downloadHandler(w http.ResponseWriter, r *http.Request) {
 		gWriter.Write(b)
 		gWriter.Flush()
 
-		if len(words) < DOWNLOAD_PAGE_SIZE {
+		if len(words) < downloadPageSize {
 			varnamCtx := ctx.(*varnamCacheContext)
 			varnamCtx.Data = gb.Bytes()
 			return errCacheSkipped

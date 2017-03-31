@@ -102,7 +102,7 @@ func getWords(schemeIdentifier string, downloadStart int) ([]*word, error) {
 	}
 
 	q := "select id, word, confidence from words where id in (select distinct(word_id) from patterns_content where learned = 1) order by id asc limit ? offset ?;"
-	rows, err := db.Query(q, DOWNLOAD_PAGE_SIZE, downloadStart)
+	rows, err := db.Query(q, downloadPageSize, downloadStart)
 	if err != nil {
 		return nil, err
 	}
