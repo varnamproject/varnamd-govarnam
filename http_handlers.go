@@ -18,6 +18,14 @@ import (
 	"github.com/varnamproject/libvarnam-golang"
 )
 
+var cacheSkipped = errors.New("cache skipped")
+
+// Context which gets passed into the groupcache fill function
+// Data will be set if the cache returns CacheSkipped
+type varnamCacheContext struct {
+	Data []byte
+}
+
 type standardResponse struct {
 	Success bool   `json:"success"`
 	Error   string `json:"error"`
@@ -214,8 +222,14 @@ func downloadHandler(w http.ResponseWriter, r *http.Request) {
 		gWriter.Write(b)
 		gWriter.Flush()
 
-		dest.SetBytes(gb.Bytes())
-		return nil
+		if len(words) < DOWNLOAD_PAGE_SIZE {
+			varnamCtx := ctx.(*varnamCacheContext)
+			varnamCtx.Data = gb.Bytes()
+			return cacheSkipped
+		} else {
+			dest.SetBytes(gb.Bytes())
+			return nil
+		}
 	}
 
 	once.Do(func() {
@@ -232,14 +246,16 @@ func downloadHandler(w http.ResponseWriter, r *http.Request) {
 	})
 
 	cacheGroup := cacheGroups[params.langCode]
+	ctx := varnamCacheContext{}
 	var data []byte
-	err := cacheGroup.Get(nil,
-		fmt.Sprintf("%s+%d", params.langCode, params.downloadStart), groupcache.AllocatingByteSliceSink(&data))
-	if err != nil {
+	switch err := cacheGroup.Get(&ctx, fmt.Sprintf("%s+%d", params.langCode, params.downloadStart), groupcache.AllocatingByteSliceSink(&data)); err {
+	case nil:
+		renderGzippedJSON(w, data)
+	case cacheSkipped:
+		renderGzippedJSON(w, ctx.Data)
+	default:
 		renderError(w, err)
 	}
-
-	renderGzippedJSON(w, data)
 }
 
 func languagesHandler(w http.ResponseWriter, r *http.Request) {
