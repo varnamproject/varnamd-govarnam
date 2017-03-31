@@ -109,7 +109,7 @@ func init() {
 	flag.BoolVar(&enableSSL, "enable-ssl", false, "Enables SSL")
 	flag.StringVar(&certFilePath, "cert-file-path", "", "Certificate file path")
 	flag.StringVar(&keyFilePath, "key-file-path", "", "Key file path")
-	flag.StringVar(&upstreamURL, "upstream", "http://api.varnamproject.com", "Provide an upstream server")
+	flag.StringVar(&upstreamURL, "upstream", "https://api.varnamproject.com", "Provide an upstream server")
 	flag.StringVar(&downloadEnabledSchemes, "enable-download", "", "Comma separated language identifier for which varnamd will download words from upstream")
 	flag.IntVar(&syncIntervalInSecs, "sync-interval", 30, "Download interval in seconds")
 	flag.BoolVar(&logToFile, "log-to-file", true, "If true, logs will be written to a file")
