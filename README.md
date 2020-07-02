@@ -39,16 +39,34 @@ varnamd supports the following command line arguments:
 
 ### API
 
-When a request is made to translate a word,say 'enthokkeyund',
+When a request is made to translate a word, say 'Malayalam',
 
-`Request URL: https://api.varnamproject.com/tl/ml/enthokkeyund `
-
+`Request URL:  https://api.varnamproject.com/tl/{langCode}/{Word}`
 `Request Method: GET`
 
-and the response for https://api.varnamproject.com/tl/ml/enthokkeyund will be:
+and the response for https://api.varnamproject.com/tl/ml/Malayalam will be:
 
-![Screen Shot 2020-07-02 at 11 11 15 AM](https://user-images.githubusercontent.com/45137335/86320762-29ef1d80-bc55-11ea-9fae-3156cef45741.png)
-
+```json
+{
+  "success": true,
+  "error": "",
+  "at": "2020-07-02 11:10:30.309343848 +0000 UTC",
+  "result": [
+    "മലയാളം",
+    "മലയാലം",
+    "മലയാ‍ളം",
+    "മലായാളം",
+    "മലയളം",
+    "മ്മലയലം",
+    "മലയാളമാ",
+    "മലയാളമാദ്ധ്യമത്തിലൂ",
+    "മലയാളമാദ്ധ്യമത്തിലൂടെ",
+    "മലയാളമാദ്ധ്യമത്തിൽ",
+    "മലയാളമാദ്ധ്യമം"
+  ],
+  "input": "Malayalam"
+}
+```
 
 
 
