@@ -42,6 +42,7 @@ varnamd supports the following command line arguments:
 When a request is made to translate a word, say 'Malayalam',
 
 `Request URL:  https://api.varnamproject.com/tl/{langCode}/{Word}`
+
 `Request Method: GET`
 
 and the response for https://api.varnamproject.com/tl/ml/Malayalam will be:
