@@ -39,7 +39,7 @@ varnamd supports the following command line arguments:
 
 ### API
 
-When a request is made to translate a word,say 'enthokkeyund' from the varnam editor,
+When a request is made to translate a word,say 'enthokkeyund',
 
 `Request URL: https://api.varnamproject.com/tl/ml/enthokkeyund `
 
