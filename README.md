@@ -3,7 +3,7 @@ varnamd
 
 Varnam daemon which also acts as a HTTP server. This program powers http://varnamproject.com
 
-####Installation
+#### Installation
 
 You do not have to git clone the repo. Use the following command to clone and install varnamd:
 
@@ -19,7 +19,7 @@ The binaries should now be present in `$GOPATH/bin/`
 
 `./$GOPATH/bin/varnamd` to run the server
 
-####Usage
+#### Usage
 
 varnamd supports the following command line arguments:
 
@@ -37,5 +37,5 @@ varnamd supports the following command line arguments:
 + `log-to-file` boolean. If true, logs will be written to a file
 + `version`
 
-####API
+#### API
 see server.go for supported APIs.
