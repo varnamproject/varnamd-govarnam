@@ -47,24 +47,7 @@ When a request is made to translate a word,say 'enthokkeyund' from the varnam ed
 
 and the response for https://api.varnamproject.com/tl/ml/enthokkeyund will be:
 
-{
-  "success": true,
-  
-  "error": "",
-  
-  "at": "2020-07-02 05:36:50.746470652 +0000 UTC",
-  
-  "result": [
-  
-    "എന്തൊക്കെയുണ്ട്",
-    "എന്തൊക്കെയുന്ദ്",
-    "എന്തൊക്കെയുണ്ടെന്നു",
-    "എന്തൊക്കെയുണ്ടെന്ന്"
-    
-  ],
-  
-  "input": "enthokkeyund"
-}
+![Screen Shot 2020-07-02 at 11 11 15 AM](https://user-images.githubusercontent.com/45137335/86320762-29ef1d80-bc55-11ea-9fae-3156cef45741.png)
 
 
 
