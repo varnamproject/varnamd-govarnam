@@ -1,9 +1,9 @@
-varnamd
+# varnamd
 =============
 
 Varnam daemon which also acts as a HTTP server. This program powers http://varnamproject.com
 
-####Installation
+### Installation
 
 You do not have to git clone the repo. Use the following command to clone and install varnamd:
 
@@ -19,7 +19,7 @@ The binaries should now be present in `$GOPATH/bin/`
 
 `./$GOPATH/bin/varnamd` to run the server
 
-####Usage
+### Usage
 
 varnamd supports the following command line arguments:
 
@@ -37,5 +37,38 @@ varnamd supports the following command line arguments:
 + `log-to-file` boolean. If true, logs will be written to a file
 + `version`
 
-####API
-see server.go for supported APIs.
+### API
+
+When a request is made to translate a word, say 'Malayalam',
+
+`Request URL:  https://api.varnamproject.com/tl/{langCode}/{Word}`
+
+`Request Method: GET`
+
+and the response for https://api.varnamproject.com/tl/ml/Malayalam will be:
+
+```json
+{
+  "success": true,
+  "error": "",
+  "at": "2020-07-02 11:10:30.309343848 +0000 UTC",
+  "result": [
+    "മലയാളം",
+    "മലയാലം",
+    "മലയാ‍ളം",
+    "മലായാളം",
+    "മലയളം",
+    "മ്മലയലം",
+    "മലയാളമാ",
+    "മലയാളമാദ്ധ്യമത്തിലൂ",
+    "മലയാളമാദ്ധ്യമത്തിലൂടെ",
+    "മലയാളമാദ്ധ്യമത്തിൽ",
+    "മലയാളമാദ്ധ്യമം"
+  ],
+  "input": "Malayalam"
+}
+```
+
+
+
+##### see server.go for supported APIs.
