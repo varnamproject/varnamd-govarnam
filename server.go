@@ -12,7 +12,9 @@ import (
 func startDaemon() {
 	initLanguageChannels()
 	initLearnChannels()
+
 	r := mux.NewRouter()
+
 	r.HandleFunc("/tl/{langCode}/{word}", transliterationHandler).Methods("GET")
 	r.HandleFunc("/rtl/{langCode}/{word}", reverseTransliterationHandler).Methods("GET")
 	r.HandleFunc("/meta/{langCode}", metadataHandler).Methods("GET")
@@ -20,6 +22,7 @@ func startDaemon() {
 	r.HandleFunc("/learn", learnHandler).Methods("POST")
 	r.HandleFunc("/languages", languagesHandler).Methods("GET")
 	r.HandleFunc("/status", statusHandler).Methods("GET")
+
 	if enableInternalApis {
 		r.HandleFunc("/sync/download/{langCode}/enable", enableDownload).Methods("POST")
 		r.HandleFunc("/sync/download/{langCode}/disable", disableDownload).Methods("POST")
@@ -29,6 +32,7 @@ func startDaemon() {
 
 	address := fmt.Sprintf("%s:%d", host, port)
 	log.Printf("Listening on %s", address)
+
 	if enableSSL {
 		if err := http.ListenAndServeTLS(address, certFilePath, keyFilePath, recoverHandler(corsHandler(r))); err != nil {
 			log.Fatalln(err)

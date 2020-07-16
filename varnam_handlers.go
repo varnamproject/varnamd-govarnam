@@ -13,7 +13,7 @@ import (
 )
 
 type word struct {
-	Id         int    `json:"id"`
+	ID         int    `json:"id"`
 	Confidence int    `json:"confidence"`
 	Word       string `json:"word"`
 }
@@ -24,8 +24,8 @@ var (
 	mutex            *sync.Mutex
 	once             sync.Once
 	schemeDetails    = libvarnam.GetAllSchemeDetails()
-	peers            = groupcache.NewHTTPPool("http://localhost")
 	cacheGroups      = make(map[string]*groupcache.Group)
+	// peers            = groupcache.NewHTTPPool("http://localhost")
 )
 
 func isValidSchemeIdentifier(id string) bool {
@@ -34,6 +34,7 @@ func isValidSchemeIdentifier(id string) bool {
 			return true
 		}
 	}
+
 	return false
 }
 
@@ -41,9 +42,11 @@ func initLanguageChannels() {
 	languageChannels = make(map[string]chan *libvarnam.Varnam)
 	channelsCount = make(map[string]int)
 	mutex = &sync.Mutex{}
+
 	for _, scheme := range schemeDetails {
 		languageChannels[scheme.Identifier] = make(chan *libvarnam.Varnam, maxHandleCount)
 		channelsCount[scheme.Identifier] = maxHandleCount
+
 		for i := 0; i < maxHandleCount; i++ {
 			handle, err := libvarnam.Init(scheme.Identifier)
 			if err != nil {
@@ -57,22 +60,27 @@ func initLanguageChannels() {
 func getOrCreateHandler(schemeIdentifier string, f func(handle *libvarnam.Varnam) (data interface{}, err error)) (data interface{}, err error) {
 	ch, ok := languageChannels[schemeIdentifier]
 	if !ok {
-		return nil, errors.New("Invalid scheme identifier")
+		return nil, errors.New("invalid scheme identifier")
 	}
 	select {
 	case handle := <-ch:
 		data, err = f(handle)
+
 		go func() { ch <- handle }()
 	case <-time.After(800 * time.Millisecond):
 		var handle *libvarnam.Varnam
 		handle, err = libvarnam.Init(schemeIdentifier)
+
 		if err != nil {
 			log.Println(err)
-			return nil, errors.New("Unable to initialize varnam handle")
+			return nil, errors.New("unable to initialize varnam handle")
 		}
+
 		data, err = f(handle)
+
 		go sendHandlerToChannel(schemeIdentifier, handle, ch)
 	}
+
 	return
 }
 
@@ -89,10 +97,12 @@ func getWords(schemeIdentifier string, downloadStart int) ([]*word, error) {
 	})
 
 	db, err := sql.Open("sqlite3", filepath.(string))
+
 	if err != nil {
 		return nil, err
 	}
-	defer db.Close()
+
+	defer func() { _ = db.Close() }()
 
 	// Making an index for all learned words so that download is faster
 	// this needs to be removed when there is more clarity on how learned words needs to be handled
@@ -101,19 +111,30 @@ func getWords(schemeIdentifier string, downloadStart int) ([]*word, error) {
 		return nil, err
 	}
 
-	q := "select id, word, confidence from words where id in (select distinct(word_id) from patterns_content where learned = 1) order by id asc limit ? offset ?;"
+	q := `select id, word, confidence from words where id in (select distinct(word_id) from patterns_content where learned = 1) order by id asc limit ? offset ?;`
 	rows, err := db.Query(q, downloadPageSize, downloadStart)
+
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+
+	if rows.Err() != nil {
+		return nil, rows.Err()
+	}
+
+	defer func() { _ = rows.Close() }()
 
 	var words []*word
+
 	for rows.Next() {
-		var id, confidence int
-		var _word string
-		rows.Scan(&id, &_word, &confidence)
-		words = append(words, &word{Id: id, Confidence: confidence, Word: _word})
+		var (
+			id, confidence int
+			_word          string
+		)
+
+		_ = rows.Scan(&id, &_word, &confidence)
+
+		words = append(words, &word{ID: id, Confidence: confidence, Word: _word})
 	}
 
 	return words, nil
@@ -130,11 +151,14 @@ func sendHandlerToChannel(schemeIdentifier string, handle *libvarnam.Varnam, ch 
 	mutex.Lock()
 	count := channelsCount[schemeIdentifier]
 	mutex.Unlock()
+
 	if count == maxHandleCount {
 		log.Printf("Throw away handle")
 		handle.Destroy()
+
 		return
 	}
+
 	select {
 	case ch <- handle:
 		mutex.Lock()

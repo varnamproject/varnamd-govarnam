@@ -6,6 +6,7 @@ import (
 	"github.com/varnamproject/libvarnam-golang"
 )
 
+// Args to read.
 type Args struct {
 	LangCode string `json:"lang"`
 	Word     string `json:"word"`
@@ -20,9 +21,11 @@ func initLearnChannels() {
 	for _, scheme := range schemeDetails {
 		learnChannels[scheme.Identifier] = make(chan string, 100)
 		handle, err := libvarnam.Init(scheme.Identifier)
+
 		if err != nil {
 			log.Fatal("Unable to initialize varnam for lang", scheme.LangCode)
 		}
+
 		go listenForWords(scheme.Identifier, handle)
 	}
 }
