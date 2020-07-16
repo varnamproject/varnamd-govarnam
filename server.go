@@ -5,53 +5,46 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"path/filepath"
 
-	"github.com/gorilla/mux"
+	"github.com/labstack/echo/v4"
 )
 
 func startDaemon() {
 	initLanguageChannels()
 	initLearnChannels()
 
-	r := mux.NewRouter()
+	e := echo.New()
 
-	r.HandleFunc("/tl/{langCode}/{word}", transliterationHandler).Methods("GET")
-	r.HandleFunc("/rtl/{langCode}/{word}", reverseTransliterationHandler).Methods("GET")
-	r.HandleFunc("/meta/{langCode}", metadataHandler).Methods("GET")
-	r.HandleFunc("/download/{langCode}/{downloadStart}", downloadHandler).Methods("GET")
-	r.HandleFunc("/learn", learnHandler).Methods("POST")
-	r.HandleFunc("/languages", languagesHandler).Methods("GET")
-	r.HandleFunc("/status", statusHandler).Methods("GET")
+	e.GET("/tl/{langCode}/{word}", handleTransliteration)
+	e.GET("/rtl/{langCode}/{word}", handleReverseTransliteration)
+	e.GET("/meta/{langCode}", handleMetadata)
+	e.GET("/download/{langCode}/{downloadStart}", handleDownload)
+	e.POST("/learn", handlLearn)
+	e.GET("/languages", handleLanguages)
+	e.GET("/status", handleStatus)
 
-	if enableInternalApis {
-		r.HandleFunc("/sync/download/{langCode}/enable", enableDownload).Methods("POST")
-		r.HandleFunc("/sync/download/{langCode}/disable", disableDownload).Methods("POST")
+	if _, err := os.Stat(uiDir); err != nil {
+		log.Fatal("UI path doesnot exist", err)
 	}
 
-	addUI(r)
+	e.Static("/", filepath.Clean(uiDir))
+
+	if enableInternalApis {
+		e.POST("/sync/download/{langCode}/enable", handleEnableDownload)
+		e.POST("/sync/download/{langCode}/disable", handleDisableDownload)
+	}
 
 	address := fmt.Sprintf("%s:%d", host, port)
 	log.Printf("Listening on %s", address)
 
 	if enableSSL {
-		if err := http.ListenAndServeTLS(address, certFilePath, keyFilePath, recoverHandler(corsHandler(r))); err != nil {
+		if err := http.ListenAndServeTLS(address, certFilePath, keyFilePath, recoverHandler(corsHandler(e))); err != nil {
 			log.Fatalln(err)
 		}
 	} else {
-		if err := http.ListenAndServe(address, recoverHandler(corsHandler(r))); err != nil {
+		if err := http.ListenAndServe(address, recoverHandler(corsHandler(e))); err != nil {
 			log.Fatalln(err)
 		}
 	}
-}
-
-func addUI(r *mux.Router) {
-	if uiDir == "" {
-		return
-	}
-
-	if _, err := os.Stat(uiDir); err != nil {
-		log.Fatalln("UI path doesnot exist", err)
-	}
-
-	r.PathPrefix("/").Handler(http.FileServer(http.Dir(uiDir)))
 }
