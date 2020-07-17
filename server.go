@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 
 	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v4/middleware"
 )
 
 func startDaemon() {
@@ -24,7 +25,7 @@ func startDaemon() {
 	e.GET("/languages", handleLanguages)
 	e.GET("/status", handleStatus)
 
-	if _, err := os.Stat(uiDir); err != nil {
+	if _, err := os.Stat(filepath.Clean(uiDir)); err != nil {
 		log.Fatal("UI path doesnot exist", err)
 	}
 
@@ -38,13 +39,30 @@ func startDaemon() {
 	address := fmt.Sprintf("%s:%d", host, port)
 	log.Printf("Listening on %s", address)
 
+	e.Use(middleware.Recover())
+	e.Use(middleware.Logger())
+
+	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
+		AllowOrigins: []string{"*"},
+		AllowMethods: []string{http.MethodOptions},
+	}))
+
+	e.Use(middleware.SecureWithConfig(middleware.SecureConfig{
+		XSSProtection:      "",
+		ContentTypeNosniff: "",
+		XFrameOptions:      "",
+		HSTSMaxAge:         3600,
+		// ContentSecurityPolicy: "default-src 'self'",
+	}))
+
 	if enableSSL {
-		if err := http.ListenAndServeTLS(address, certFilePath, keyFilePath, recoverHandler(corsHandler(e))); err != nil {
-			log.Fatalln(err)
+		if err := e.StartTLS(address, certFilePath, keyFilePath); err != nil {
+			log.Fatal(err)
 		}
 	} else {
-		if err := http.ListenAndServe(address, recoverHandler(corsHandler(e))); err != nil {
-			log.Fatalln(err)
+		if err := e.Start(address); err != nil {
+			log.Fatal(err)
 		}
 	}
+
 }

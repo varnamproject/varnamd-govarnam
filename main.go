@@ -109,8 +109,8 @@ func redirectLogToFile() {
 func init() {
 	flag.IntVar(&port, "p", 8080, "Run daemon in specified port")
 	flag.IntVar(&maxHandleCount, "max-handle-count", 10, "Maximum number of handles can be opened for each language")
-	flag.StringVar(&host, "host", "", "Host for the varnam daemon server")
-	flag.StringVar(&uiDir, "ui", "", "UI directory path")
+	flag.StringVar(&host, "host", "localhost", "Host for the varnam daemon server")
+	flag.StringVar(&uiDir, "ui", "ui", "UI directory path")
 	flag.BoolVar(&enableInternalApis, "enable-internal-apis", false, "Enable internal APIs")
 	flag.BoolVar(&enableSSL, "enable-ssl", false, "Enables SSL")
 	flag.StringVar(&certFilePath, "cert-file-path", "", "Certificate file path")

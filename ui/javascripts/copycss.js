@@ -1,6 +1,6 @@
-(function($) {
+(function ($) {
 
-    $.fn.getStyles = function(only, except) {
+    $.fn.getStyles = function (only, except) {
 
         // the map to return with requested styles and values as KVP
         var product = {};
@@ -30,12 +30,12 @@
 
                 // convenience methods to turn css case ('background-image') to camel ('backgroundImage')
                 var pattern = /\-([a-z])/g;
-                var uc = function(a, b) {
-                        return b.toUpperCase();
-                    };
-                var camelize = function(string) {
-                        return string.replace(pattern, uc);
-                    };
+                var uc = function (a, b) {
+                    return b.toUpperCase();
+                };
+                var camelize = function (string) {
+                    return string.replace(pattern, uc);
+                };
 
                 // make sure we're getting a good reference
                 if (style = window.getComputedStyle(dom, null)) {
@@ -88,7 +88,7 @@
     };
 
     // sugar - source is the selector, dom element or jQuery instance to copy from - only and except are optional
-    $.fn.copyCSS = function(source, only, except) {
+    $.fn.copyCSS = function (source, only, except) {
         var styles = $(source).getStyles(only, except);
         this.css(styles);
     };

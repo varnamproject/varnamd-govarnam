@@ -1,146 +1,257 @@
 body {
-    background: url("../images/stressed_linen.png") repeat scroll 0 0 #151515;
-    /*color: #EAEAEA;*/
-    color: #B3B3B3;
-    line-height: 1.5;
-    margin: 0 0 10px;
-    padding: 0;
-    font-size: 16px;
-    font-weight: normal;
+  background: url("../images/stressed_linen.png") repeat scroll 0 0 #151515;
+  /*color: #EAEAEA;*/
+  color: #b3b3b3;
+  line-height: 1.5;
+  margin: 0 0 10px;
+  padding: 0;
+  font-size: 16px;
+  font-weight: normal;
 }
 
 code {
-    border: 0px;
-    background-color: rgba(186, 196, 204, 0.12);
+  border: 0px;
+  background-color: rgba(186, 196, 204, 0.12);
 }
 
 .container {
-    max-width: 800px;
-    margin: 0 auto;
-    width: 90%;
+  max-width: 800px;
+  margin: 0 auto;
+  width: 90%;
 }
 
 header h1:before {
-    content: "./ ";
-    font-size: 24px;
+  content: "./ ";
+  font-size: 24px;
 }
 
 .main-content {
-    background: none repeat scroll 0 0 rgba(186, 196, 204, 0.12);
-    border-radius: 10px 10px 10px 10px;
-    margin-top: 15px;
-    padding-left: 30px;
-    padding-right: 30px;
+  background: none repeat scroll 0 0 rgba(186, 196, 204, 0.12);
+  border-radius: 10px 10px 10px 10px;
+  margin-top: 15px;
+  padding-left: 30px;
+  padding-right: 30px;
 }
 
 .footer {
-    font-size: 12px;
-    text-align: right;
-    padding-left: 50%;
+  font-size: 12px;
+  text-align: right;
+  padding-left: 50%;
 }
 
 h1 {
-    font-size: 30px;
+  font-size: 30px;
 }
 
 h1 a {
-    color: inherit;
-    text-decoration: none;
+  color: inherit;
+  text-decoration: none;
 }
 
 h1 a:hover {
-    color: inherit;
-    text-decoration: none;
+  color: inherit;
+  text-decoration: none;
 }
 
-h2, h3 {
-    font-size: 18px;
+h2,
+h3 {
+  font-size: 18px;
 }
 
-h1, h2, h3 {
-    /*color: #0088CC;*/
-    color: #B5E853;
+h1,
+h2,
+h3 {
+  /*color: #0088CC;*/
+  color: #b5e853;
 }
 
 .main-content h3 {
-    font-size: 18px;
+  font-size: 18px;
 }
 
 .logo {
-    font-family: Monaco,"Bitstream Vera Sans Mono","Lucida Console",Terminal,monospace;
+  font-family: Monaco, "Bitstream Vera Sans Mono", "Lucida Console", Terminal,
+    monospace;
 }
 
-header .logo h2{
-    color: #666666;
-    font-weight: 300; 
-    font-size:18px;
-    letter-spacing: -0.03em;
-    text-shadow: 0 1px 1px rgba(0, 0, 0, 0.1), 0 0 5px rgba(181, 232, 83, 0.1), 0 0 10px rgba(181, 232, 83, 0.1);
-    line-height: 30px;
+header .logo h2 {
+  color: #666666;
+  font-weight: 300;
+  font-size: 18px;
+  letter-spacing: -0.03em;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.1), 0 0 5px rgba(181, 232, 83, 0.1),
+    0 0 10px rgba(181, 232, 83, 0.1);
+  line-height: 30px;
 }
 
 #mainlinks a {
-    border-color: #000000 rgba(0, 0, 0, 0.7) rgba(0, 0, 0, 0.7);
-    border-image: none;
-    border-left: 2px solid rgba(0, 0, 0, 0.7);
-    border-radius: 50px 50px 50px 50px;
-    border-right: 2px solid rgba(0, 0, 0, 0.7);
-    border-style: solid;
-    border-width: 2px;
-    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.05) inset;
-    color: #B3B3B3; 
-    display: inline-block;
-    font-family: Helvetica,Arial,sans-serif;
-    font-size: 15px;
-    padding: 8px 18px;
-    text-decoration: none;
-    text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.75);
-    background-color: #1E1C1C;
+  border-color: #000000 rgba(0, 0, 0, 0.7) rgba(0, 0, 0, 0.7);
+  border-image: none;
+  border-left: 2px solid rgba(0, 0, 0, 0.7);
+  border-radius: 50px 50px 50px 50px;
+  border-right: 2px solid rgba(0, 0, 0, 0.7);
+  border-style: solid;
+  border-width: 2px;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.05) inset;
+  color: #b3b3b3;
+  display: inline-block;
+  font-family: Helvetica, Arial, sans-serif;
+  font-size: 15px;
+  padding: 8px 18px;
+  text-decoration: none;
+  text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.75);
+  background-color: #1e1c1c;
 }
 
 p {
-    margin: 0 0 1.5em;
+  margin: 0 0 1.5em;
 }
 
 .navigation {
-    float: right;
+  float: right;
 }
 
 .editor {
-    clear: both;
-    margin-right: 10px;
+  clear: both;
+  margin-right: 10px;
 }
 
 .repolinks {
-    list-style: none;
+  list-style: none;
 }
 
 .repolinks li:before {
-    content: "- ";
-    color: red;
-    font-weight: bold;
-    font-size: smaller;
+  content: "- ";
+  color: red;
+  font-weight: bold;
+  font-size: smaller;
 }
 
-nav ul{list-style-type:none;float:right;}
-nav ul li {display:inline-block; }
-.headlines {margin-top:200px;}
-.headlines p{font-size:25px; color:#fff;}
-.main-container{margin-top:40px;}
-.banner { background:#ccc;}
+nav ul {
+  list-style-type: none;
+  float: right;
+}
+nav ul li {
+  display: inline-block;
+}
+.headlines {
+  margin-top: 200px;
+}
+.headlines p {
+  font-size: 25px;
+  color: #fff;
+}
+.main-container {
+  margin-top: 40px;
+}
+.banner {
+  background: #ccc;
+}
 
-header.inner {height:100px;background: url("../images/bg.jpg") no-repeat scroll left -165px transparent;}
-header.inner .logo{height:100px;}
-header.inner .logo h1{line-height:100px;}
+header.inner {
+  height: 100px;
+  background: url("../images/bg.jpg") no-repeat scroll left -165px transparent;
+}
+header.inner .logo {
+  height: 100px;
+}
+header.inner .logo h1 {
+  line-height: 100px;
+}
 
 pre {
-    background-color: black;
-    color: #666;
+  background-color: black;
+  color: #666;
 }
 
 .main-intro {
-    text-align: center;
-    padding-top: 10px;
-    padding-bottom: 0px;
+  text-align: center;
+  padding-top: 10px;
+  padding-bottom: 0px;
 }
 
+.CodeMirror-completions {
+  position: absolute;
+  z-index: 10;
+  overflow: hidden;
+  -webkit-box-shadow: 2px 3px 5px rgba(0, 0, 0, 0.2);
+  -moz-box-shadow: 2px 3px 5px rgba(0, 0, 0, 0.2);
+  box-shadow: 2px 3px 5px rgba(0, 0, 0, 0.2);
+}
+
+.CodeMirror-completions select {
+  background: #fafafa;
+  outline: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  font-family: monospace;
+}
+
+.CodeMirror {
+  background: #ededed;
+  border: #333 solid 1px;
+}
+
+iframe {
+  /*	width: 100%;*/
+  display: block;
+  width: 100%;
+  height: 400px;
+  background-color: #fff;
+  /*padding: 5px;*/
+  overflow: auto;
+  /*margin-right:5px;*/
+  border: 1px solid black;
+  box-shadow: rgba(0, 0, 0, 0.75) 0 2px 5px;
+  border-radius: 3px;
+}
+
+.CodeMirror pre {
+  line-height: inherit;
+  color: #b3b3b3;
+}
+
+.CodeMirror-wrap pre {
+  word-break: normal;
+}
+
+.CodeMirror-gutter {
+  background: none repeat scroll 0 0 rgba(186, 196, 204, 0.12);
+}
+
+.navbar h1 {
+  color: #000;
+  /* margin-top: 5px; */
+  display: inline;
+}
+
+.toolbar {
+  position: relative;
+  padding-right: 10px;
+}
+
+.caption {
+  position: absolute;
+  bottom: 17px;
+  left: 155px;
+}
+
+.navbar .navbar-inner {
+  background: none repeat scroll 0 0 #ffffff;
+  border-radius: 0 0 0 0;
+  box-shadow: none;
+  color: #000000;
+  padding-top: 10px;
+  text-shadow: none;
+}
+
+.networkerror {
+  z-index: 9;
+  position: fixed;
+  top: 0px;
+  left: 18%;
+  display: none;
+  margin: 0 auto;
+  width: 60%;
+}
