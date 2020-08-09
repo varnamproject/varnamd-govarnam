@@ -17,10 +17,10 @@ func startDaemon() {
 
 	e := echo.New()
 
-	e.GET("/tl/{langCode}/{word}", handleTransliteration)
-	e.GET("/rtl/{langCode}/{word}", handleReverseTransliteration)
-	e.GET("/meta/{langCode}", handleMetadata)
-	e.GET("/download/{langCode}/{downloadStart}", handleDownload)
+	e.GET("/tl/:langCode/:word", handleTransliteration)
+	e.GET("/rtl/:langCode/:word", handleReverseTransliteration)
+	e.GET("/meta/:langCode:", handleMetadata)
+	e.GET("/download/:langCode/:downloadStart", handleDownload)
 	e.POST("/learn", handlLearn)
 	e.GET("/languages", handleLanguages)
 	e.GET("/status", handleStatus)
