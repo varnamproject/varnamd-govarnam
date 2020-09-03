@@ -138,11 +138,11 @@ func startSyncDispatcher() {
 }
 
 func main() {
-	varnamdConfig = initConfig()
-	startedAt = time.Now()
-
 	runtime.GOMAXPROCS(runtime.NumCPU())
 	flag.Parse()
+
+	varnamdConfig = initConfig()
+	startedAt = time.Now()
 
 	if version {
 		fmt.Println(varnamdVersion)

@@ -55,6 +55,12 @@ type downloadResponse struct {
 	standardResponse
 }
 
+// Args to read.
+type args struct {
+	LangCode string `json:"lang"`
+	Word     string `json:"word"`
+}
+
 func corsHandler(h http.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Access-Control-Allow-Origin", "*")
@@ -259,7 +265,7 @@ func handleLanguages(c echo.Context) error {
 }
 
 func handlLearn(c echo.Context) error {
-	var args Args
+	var args args
 
 	if err := c.Bind(&args); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("error getting metadata. message: %s", err.Error()))

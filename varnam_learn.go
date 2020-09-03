@@ -6,12 +6,6 @@ import (
 	"github.com/varnamproject/libvarnam-golang"
 )
 
-// Args to read.
-type Args struct {
-	LangCode string `json:"lang"`
-	Word     string `json:"word"`
-}
-
 var (
 	learnChannels map[string]chan string
 )
