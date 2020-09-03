@@ -52,6 +52,7 @@ func initLanguageChannels() {
 			if err != nil {
 				panic("Unable to init varnam for language " + scheme.LangCode + "." + err.Error())
 			}
+
 			languageChannels[scheme.Identifier] <- handle
 		}
 	}
@@ -59,9 +60,11 @@ func initLanguageChannels() {
 
 func getOrCreateHandler(schemeIdentifier string, f func(handle *libvarnam.Varnam) (data interface{}, err error)) (data interface{}, err error) {
 	ch, ok := languageChannels[schemeIdentifier]
+
 	if !ok {
 		return nil, errors.New("invalid scheme identifier")
 	}
+
 	select {
 	case handle := <-ch:
 		data, err = f(handle)
@@ -69,14 +72,18 @@ func getOrCreateHandler(schemeIdentifier string, f func(handle *libvarnam.Varnam
 		go func() { ch <- handle }()
 	case <-time.After(800 * time.Millisecond):
 		var handle *libvarnam.Varnam
-		handle, err = libvarnam.Init(schemeIdentifier)
 
+		handle, err = libvarnam.Init(schemeIdentifier)
 		if err != nil {
 			log.Println(err)
 			return nil, errors.New("unable to initialize varnam handle")
 		}
 
 		data, err = f(handle)
+		if err != nil {
+			log.Println(err)
+			return nil, errors.New("unable to complete varnam handle")
+		}
 
 		go sendHandlerToChannel(schemeIdentifier, handle, ch)
 	}
@@ -84,10 +91,9 @@ func getOrCreateHandler(schemeIdentifier string, f func(handle *libvarnam.Varnam
 	return
 }
 
-func transliterate(schemeIdentifier string, word string) (data interface{}, err error) {
+func transliterate(schemeIdentifier string, word string) (interface{}, error) {
 	return getOrCreateHandler(schemeIdentifier, func(handle *libvarnam.Varnam) (data interface{}, err error) {
-		data, err = handle.Transliterate(word)
-		return
+		return handle.Transliterate(word)
 	})
 }
 
@@ -97,7 +103,6 @@ func getWords(schemeIdentifier string, downloadStart int) ([]*word, error) {
 	})
 
 	db, err := sql.Open("sqlite3", filepath.(string))
-
 	if err != nil {
 		return nil, err
 	}
@@ -106,14 +111,13 @@ func getWords(schemeIdentifier string, downloadStart int) ([]*word, error) {
 
 	// Making an index for all learned words so that download is faster
 	// this needs to be removed when there is more clarity on how learned words needs to be handled
-	_, err = db.Exec("create index if not exists varnamd_download_only_learned on patterns_content (learned) where learned = 1;")
-	if err != nil {
+	if _, err = db.Exec("create index if not exists varnamd_download_only_learned on patterns_content (learned) where learned = 1;"); err != nil {
 		return nil, err
 	}
 
 	q := `select id, word, confidence from words where id in (select distinct(word_id) from patterns_content where learned = 1) order by id asc limit ? offset ?;`
-	rows, err := db.Query(q, downloadPageSize, downloadStart)
 
+	rows, err := db.Query(q, downloadPageSize, downloadStart)
 	if err != nil {
 		return nil, err
 	}
@@ -140,10 +144,9 @@ func getWords(schemeIdentifier string, downloadStart int) ([]*word, error) {
 	return words, nil
 }
 
-func reveseTransliterate(schemeIdentifier string, word string) (data interface{}, err error) {
+func reveseTransliterate(schemeIdentifier string, word string) (interface{}, error) {
 	return getOrCreateHandler(schemeIdentifier, func(handle *libvarnam.Varnam) (data interface{}, err error) {
-		data, err = handle.ReverseTransliterate(word)
-		return
+		return handle.ReverseTransliterate(word)
 	})
 }
 

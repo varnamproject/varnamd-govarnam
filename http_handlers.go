@@ -7,9 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"log"
 	"net/http"
-	"runtime"
 	"strconv"
 	"strings"
 	"time"
@@ -61,44 +59,6 @@ type args struct {
 	Text     string `json:"text"`
 }
 
-func corsHandler(h http.Handler) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Access-Control-Allow-Origin", "*")
-
-		if r.Method == "OPTIONS" {
-			w.WriteHeader(http.StatusOK)
-		} else {
-			h.ServeHTTP(w, r)
-		}
-	}
-}
-
-func recoverHandler(next http.Handler) http.Handler {
-	fn := func(w http.ResponseWriter, r *http.Request) {
-		defer func() {
-			if err := recover(); err != nil {
-				stack := make([]byte, 1024)
-				stack = stack[:runtime.Stack(stack, false)]
-				log.Printf("panic: %s\n%s", err, stack)
-				http.Error(w, http.StatusText(500), 500)
-			}
-		}()
-		next.ServeHTTP(w, r)
-	}
-
-	return http.HandlerFunc(fn)
-}
-
-// func getLangCode(r *http.Request) string {
-// 	params := mux.Vars(r)
-// 	return params["langCode"]
-// }
-
-// func getWord(r *http.Request) string {
-// 	params := mux.Vars(r)
-// 	return params["word"]
-// }
-
 func handleStatus(c echo.Context) error {
 	uptime := time.Since(startedAt)
 
@@ -121,9 +81,7 @@ func handleTransliteration(c echo.Context) error {
 		word     = c.Param("word")
 	)
 
-	// langCode, word := getLanguageAndWord(r)
 	words, err := transliterate(langCode, word)
-
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("error transliterating given string. message: %s", err.Error()))
 	}
@@ -138,7 +96,6 @@ func handleReverseTransliteration(c echo.Context) error {
 	)
 
 	result, err := reveseTransliterate(langCode, word)
-
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("error transliterating given string. message: %s", err.Error()))
 	}
@@ -159,7 +116,6 @@ func handleMetadata(c echo.Context) error {
 
 	data, err := getOrCreateHandler(schemeIdentifier, func(handle *libvarnam.Varnam) (data interface{}, err error) {
 		details, err := handle.GetCorpusDetails()
-
 		if err != nil {
 			return nil, err
 		}
@@ -176,10 +132,8 @@ func handleMetadata(c echo.Context) error {
 func handleDownload(c echo.Context) error {
 	var (
 		langCode = c.Param("langCode")
-		// word     = c.Param("word")
+		start, _ = strconv.Atoi(c.Param("downloadStart"))
 	)
-
-	start, _ := strconv.Atoi(c.Param("downloadStart"))
 
 	if start < 0 {
 		return echo.NewHTTPError(http.StatusBadRequest, "invalid parameter")
@@ -191,15 +145,15 @@ func handleDownload(c echo.Context) error {
 		parts := strings.Split(key, "+")
 		schemeID := parts[0]
 		downloadStart, _ := strconv.Atoi(parts[1])
-		words, err := getWords(schemeID, downloadStart)
 
+		words, err := getWords(schemeID, downloadStart)
 		if err != nil {
 			return err
 		}
 
 		response := downloadResponse{Count: len(words), Words: words, standardResponse: newStandardResponse()}
-		b, err := json.Marshal(response)
 
+		b, err := json.Marshal(response)
 		if err != nil {
 			return err
 		}
@@ -265,19 +219,20 @@ func handleLanguages(c echo.Context) error {
 }
 
 func handlLearn(c echo.Context) error {
-	var args args
+	var a args
 
-	if err := c.Bind(&args); err != nil {
+	c.Request().Header.Set("Content-Type", "application/json")
+
+	if err := c.Bind(&a); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("error getting metadata. message: %s", err.Error()))
 	}
 
-	ch, ok := learnChannels[args.LangCode]
-
+	ch, ok := learnChannels[a.LangCode]
 	if !ok {
 		return echo.NewHTTPError(http.StatusBadRequest, "unable to find language")
 	}
 
-	go func(word string) { ch <- word }(args.Text)
+	go func(word string) { ch <- word }(a.Text)
 
 	return c.JSON(http.StatusOK, "success")
 }
@@ -296,7 +251,6 @@ func handleEnableDownload(c echo.Context) error {
 	)
 
 	data, err := toggleDownloadEnabledStatus(langCode, true)
-
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("error getting metadata. message: %s", err.Error()))
 	}
@@ -310,7 +264,6 @@ func handleDisableDownload(c echo.Context) error {
 	)
 
 	data, err := toggleDownloadEnabledStatus(langCode, false)
-
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("error getting metadata. message: %s", err.Error()))
 	}

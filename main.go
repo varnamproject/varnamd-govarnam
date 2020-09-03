@@ -85,9 +85,8 @@ func getConfigDir() string {
 func getLogsDir() string {
 	d := getConfigDir()
 	logsDir := path.Join(d, "logs")
-	err := os.MkdirAll(logsDir, 0750)
 
-	if err != nil {
+	if err := os.MkdirAll(logsDir, 0750); err != nil {
 		panic(err)
 	}
 
@@ -97,8 +96,8 @@ func getLogsDir() string {
 func redirectLogToFile() {
 	year, month, day := time.Now().Date()
 	logfile := path.Join(getLogsDir(), fmt.Sprintf("%d-%d-%d.log", year, month, day))
-	f, err := os.OpenFile(logfile, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0600)
 
+	f, err := os.OpenFile(logfile, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0600)
 	if err != nil {
 		panic(err)
 	}

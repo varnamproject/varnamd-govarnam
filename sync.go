@@ -28,7 +28,6 @@ func newSyncDispatcher(interval time.Duration) *syncDispatcher {
 
 func (s *syncDispatcher) start() {
 	err := createSyncMetadataDir()
-
 	if err != nil {
 		fmt.Printf("Failed to create sync metadata directory. Sync will be disabled.\nActual error: %s\n", err.Error())
 		return
@@ -37,10 +36,8 @@ func (s *syncDispatcher) start() {
 	for s := range varnamdConfig.schemesToDownload {
 		// download cache directory for each of the languages
 		err = createLearnQueueDir(s)
-
 		if err != nil {
 			fmt.Printf("Failed to create learn queue directory for '%s'. Sync will be disabled.\nActual error: %s\n", s, err.Error())
-
 			return
 		}
 	}
@@ -181,8 +178,7 @@ func downloadWordsAndUpdateOffset(langCode string, offset int) (string, error) {
 		return "", err
 	}
 
-	err = setDownloadOffset(langCode, offset+count)
-	if err != nil {
+	if err = setDownloadOffset(langCode, offset+count); err != nil {
 		log.Printf("Error setting download offset for '%s'. %s\n", langCode, err.Error())
 		return "", err
 	}
@@ -191,12 +187,12 @@ func downloadWordsAndUpdateOffset(langCode string, offset int) (string, error) {
 }
 
 func getCorpusDetails(langCode string) (*libvarnam.CorpusDetails, error) {
+	var m metaResponse
+
 	url := fmt.Sprintf("%s/meta/%s", varnamdConfig.upstream, langCode)
 	log.Printf("Fetching corpus details for '%s'\n", langCode)
 
-	var m metaResponse
 	err := getJSONResponse(url, &m)
-
 	if err != nil {
 		return nil, err
 	}
@@ -212,14 +208,11 @@ func downloadWords(langCode string, offset int) (totalWordsDownloaded int, downl
 	var response downloadResponse
 
 	url := fmt.Sprintf("%s/download/%s/%d", varnamdConfig.upstream, langCode, offset)
-	err = getJSONResponse(url, &response)
-
-	if err != nil {
+	if err = getJSONResponse(url, &response); err != nil {
 		return 0, "", err
 	}
 
 	downloadedFilePath, err = transformAndPersistWords(langCode, offset, &response)
-
 	if err != nil {
 		log.Printf("Download was successful, but failed to persist to local learn queue. %s\n", err.Error())
 		return 0, "", err
@@ -230,8 +223,8 @@ func downloadWords(langCode string, offset int) (totalWordsDownloaded int, downl
 
 func transformAndPersistWords(langCode string, offset int, dresp *downloadResponse) (string, error) {
 	learnQueueDir := getLearnQueueDir(langCode)
-	targetFile, err := os.Create(path.Join(learnQueueDir, fmt.Sprintf("%s.%d", langCode, offset)))
 
+	targetFile, err := os.Create(path.Join(learnQueueDir, fmt.Sprintf("%s.%d", langCode, offset)))
 	if err != nil {
 		return "", err
 	}
@@ -239,8 +232,7 @@ func transformAndPersistWords(langCode string, offset int, dresp *downloadRespon
 	defer func() { _ = targetFile.Close() }()
 
 	for _, word := range dresp.Words {
-		_, err = targetFile.WriteString(fmt.Sprintf("%s %d\n", word.Word, word.Confidence))
-		if err != nil {
+		if _, err = targetFile.WriteString(fmt.Sprintf("%s %d\n", word.Word, word.Confidence)); err != nil {
 			return "", err
 		}
 	}
@@ -252,8 +244,8 @@ func getFilesFromLearnQueue(langCode string) []string {
 	var files []string
 
 	learnQueueDir := getLearnQueueDir(langCode)
-	queueContents, err := ioutil.ReadDir(learnQueueDir)
 
+	queueContents, err := ioutil.ReadDir(learnQueueDir)
 	if err != nil {
 		return nil
 	}
@@ -270,8 +262,7 @@ func getFilesFromLearnQueue(langCode string) []string {
 func getJSONResponse(url string, output interface{}) error {
 	log.Printf("GET: '%s'\n", url)
 
-	resp, err := http.Get(url)
-
+	resp, err := http.Get(url) // #nosec G107
 	if err != nil {
 		return err
 	}
@@ -279,19 +270,14 @@ func getJSONResponse(url string, output interface{}) error {
 	defer func() { _ = resp.Body.Close() }()
 
 	jsonDecoder := json.NewDecoder(resp.Body)
-	err = jsonDecoder.Decode(output)
 
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return jsonDecoder.Decode(output)
 }
 
 func getDownloadOffset(langCode string) int {
 	filePath := getDownloadOffsetMetadataFile(langCode)
-	content, err := ioutil.ReadFile(filepath.Clean(filePath))
 
+	content, err := ioutil.ReadFile(filepath.Clean(filePath))
 	if err != nil {
 		return 0
 	}
@@ -316,13 +302,7 @@ func getDownloadOffsetMetadataFile(langCode string) string {
 
 func createLearnQueueDir(langCode string) error {
 	queueDir := getLearnQueueDir(langCode)
-	err := os.MkdirAll(queueDir, 0750)
-
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return os.MkdirAll(queueDir, 0750)
 }
 
 func getLearnQueueDir(langCode string) string {
@@ -334,18 +314,10 @@ func getLearnQueueDir(langCode string) string {
 
 func createSyncMetadataDir() error {
 	syncDir := getSyncMetadataDir()
-	err := os.MkdirAll(syncDir, 0750)
-
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return os.MkdirAll(syncDir, 0750)
 }
 
 func getSyncMetadataDir() string {
 	configDir := getConfigDir()
-	syncDir := path.Join(configDir, "sync")
-
-	return syncDir
+	return path.Join(configDir, "sync")
 }

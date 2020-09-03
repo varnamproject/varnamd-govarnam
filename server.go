@@ -64,5 +64,4 @@ func startDaemon() {
 			log.Fatal(err)
 		}
 	}
-
 }
