@@ -196,22 +196,17 @@ func handleDownload(c echo.Context) error {
 	ctx := varnamCacheContext{}
 
 	var data []byte
-
 	if err := cacheGroup.Get(&ctx, fmt.Sprintf("%s+%d", langCode, start), groupcache.AllocatingByteSliceSink(&data)); err != nil {
 		if err == errCacheSkipped {
-			c.Response().Header().Set("Content-Type", "application/json; charset=utf-8")
 			c.Response().Header().Set("Content-Encoding", "gzip")
-
-			return c.JSON(http.StatusOK, ctx.Data)
+			return c.Blob(http.StatusOK, "application/json; charset=utf-8", ctx.Data)
 		}
 
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("error getting metadata. message: %s", err.Error()))
 	}
 
-	c.Response().Header().Set("Content-Type", "application/json; charset=utf-8")
 	c.Response().Header().Set("Content-Encoding", "gzip")
-
-	return c.JSON(http.StatusOK, data)
+	return c.Blob(http.StatusOK, "application/json; charset=utf-8", data)
 }
 
 func handleLanguages(c echo.Context) error {
