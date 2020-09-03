@@ -58,7 +58,7 @@ type downloadResponse struct {
 // Args to read.
 type args struct {
 	LangCode string `json:"lang"`
-	Word     string `json:"word"`
+	Text     string `json:"text"`
 }
 
 func corsHandler(h http.Handler) http.HandlerFunc {
@@ -277,7 +277,7 @@ func handlLearn(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, "unable to find language")
 	}
 
-	go func(word string) { ch <- word }(args.Word)
+	go func(word string) { ch <- word }(args.Text)
 
 	return c.JSON(http.StatusOK, "success")
 }
