@@ -27,16 +27,14 @@ func newSyncDispatcher(interval time.Duration) *syncDispatcher {
 }
 
 func (s *syncDispatcher) start() {
-	err := createSyncMetadataDir()
-	if err != nil {
+	if err := createSyncMetadataDir(); err != nil {
 		fmt.Printf("Failed to create sync metadata directory. Sync will be disabled.\nActual error: %s\n", err.Error())
 		return
 	}
 
 	for s := range varnamdConfig.schemesToDownload {
 		// download cache directory for each of the languages
-		err = createLearnQueueDir(s)
-		if err != nil {
+		if err := createLearnQueueDir(s); err != nil {
 			fmt.Printf("Failed to create learn queue directory for '%s'. Sync will be disabled.\nActual error: %s\n", s, err.Error())
 			return
 		}
@@ -56,10 +54,6 @@ func (s *syncDispatcher) start() {
 		}
 	}()
 }
-
-// func (s *syncDispatcher) stop() {
-// 	close(s.quit)
-// }
 
 func (s *syncDispatcher) runNow() {
 	s.force <- true
@@ -129,7 +123,6 @@ func downloadAllWords(langCode string, corpusSize int, output chan string) {
 		}
 
 		filePath, err := downloadWordsAndUpdateOffset(langCode, offset)
-
 		if err != nil {
 			break
 		}
@@ -162,8 +155,7 @@ func learnFromFile(langCode, fileToLearn string) {
 			log.Printf("Learned from '%s'. TotalWords: %d, Failed: %d. Took %s\n", fileToLearn, learnStatus.TotalWords, learnStatus.Failed, end.Sub(start))
 		}
 
-		err = os.Remove(fileToLearn)
-		if err != nil {
+		if err = os.Remove(fileToLearn); err != nil {
 			log.Printf("Error deleting '%s'. %s\n", fileToLearn, err.Error())
 		}
 
@@ -192,8 +184,7 @@ func getCorpusDetails(langCode string) (*libvarnam.CorpusDetails, error) {
 	url := fmt.Sprintf("%s/meta/%s", varnamdConfig.upstream, langCode)
 	log.Printf("Fetching corpus details for '%s'\n", langCode)
 
-	err := getJSONResponse(url, &m)
-	if err != nil {
+	if err := getJSONResponse(url, &m); err != nil {
 		return nil, err
 	}
 
