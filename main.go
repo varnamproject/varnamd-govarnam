@@ -30,6 +30,11 @@ var (
 	syncDispatcherRunning  bool
 )
 
+// App is a singleton to share across handlers.
+type App struct {
+	cache Cache
+}
+
 // varnamd configurations
 // this is populated from various command line flags
 type config struct {
@@ -154,6 +159,10 @@ func main() {
 
 	log.Printf("varnamd %s", varnamdVersion)
 
+	app := &App{
+		cache: NewMemCache(),
+	}
+
 	startSyncDispatcher()
-	startDaemon()
+	startDaemon(app)
 }

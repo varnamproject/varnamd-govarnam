@@ -79,14 +79,21 @@ func handleTransliteration(c echo.Context) error {
 	var (
 		langCode = c.Param("langCode")
 		word     = c.Param("word")
+		app      = c.Get("app").(*App)
 	)
 
-	words, err := transliterate(langCode, word)
+	words, err := app.cache.Get(langCode, word)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("error transliterating given string. message: %s", err.Error()))
+		w, err := transliterate(langCode, word)
+		if err != nil {
+			return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("error transliterating given string. message: %s", err.Error()))
+		}
+
+		words = w.([]string)
+		app.cache.Set(langCode, word, words)
 	}
 
-	return c.JSON(http.StatusOK, transliterationResponse{standardResponse: newStandardResponse(), Result: words.([]string), Input: word})
+	return c.JSON(http.StatusOK, transliterationResponse{standardResponse: newStandardResponse(), Result: words, Input: word})
 }
 
 func handleReverseTransliteration(c echo.Context) error {

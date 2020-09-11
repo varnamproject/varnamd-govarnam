@@ -11,7 +11,8 @@ import (
 	"github.com/labstack/echo/v4/middleware"
 )
 
-func startDaemon() {
+func startDaemon(app *App) {
+
 	initLanguageChannels()
 	initLearnChannels()
 
@@ -41,6 +42,14 @@ func startDaemon() {
 
 	e.Use(middleware.Recover())
 	e.Use(middleware.Logger())
+
+	// Custom middleware to set sigleton to app's context.
+	e.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func(c echo.Context) error {
+			c.Set("app", app)
+			return next(c)
+		}
+	})
 
 	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
 		AllowOrigins: []string{"*"},
