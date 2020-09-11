@@ -90,7 +90,7 @@ func handleTransliteration(c echo.Context) error {
 		}
 
 		words = w.([]string)
-		app.cache.Set(langCode, word, words)
+		app.cache.Set(langCode, word, words...)
 	}
 
 	return c.JSON(http.StatusOK, transliterationResponse{standardResponse: newStandardResponse(), Result: words, Input: word})
@@ -100,11 +100,22 @@ func handleReverseTransliteration(c echo.Context) error {
 	var (
 		langCode = c.Param("langCode")
 		word     = c.Param("word")
+		app      = c.Get("app").(*App)
 	)
 
-	result, err := reveseTransliterate(langCode, word)
+	result, err := app.cache.Get(langCode, word)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("error transliterating given string. message: %s", err.Error()))
+		res, err := reveseTransliterate(langCode, word)
+		if err != nil {
+			return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("error transliterating given string. message: %s", err.Error()))
+		}
+
+		result = []string{res.(string)}
+		app.cache.Set(langCode, word, res.(string))
+	}
+
+	if len(result) <= 0 {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("no transliteration found for lanugage: %s, word: %s", langCode, word))
 	}
 
 	response := struct {
@@ -112,7 +123,7 @@ func handleReverseTransliteration(c echo.Context) error {
 		Result string `json:"result"`
 	}{
 		newStandardResponse(),
-		result.(string),
+		result[0],
 	}
 
 	return c.JSON(http.StatusOK, response)
