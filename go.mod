@@ -3,6 +3,7 @@ module github.com/varnamproject/varnamd
 go 1.14
 
 require (
+	github.com/coocood/freecache v1.1.1
 	github.com/golang/groupcache v0.0.0-20200121045136-8c9f03a8e57e
 	github.com/golang/protobuf v1.4.2 // indirect
 	github.com/labstack/echo/v4 v4.1.16
