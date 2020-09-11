@@ -11,12 +11,12 @@ import (
 const (
 	defaultCacheSize = 100 << 20      // 100 MB cache
 	defaultExpiry    = time.Hour * 24 // Cache for 24 hours
-	wordSeparator    = "|"            // Assuming the separator wont be used in any case.
+	wordSeparator    = "<>"           // Assuming the separator wont be used in any case.
 )
 
 // Cache objects.
 type Cache interface {
-	Set(lang, word string, val []string) error
+	Set(lang, word string, val ...string) error
 	Get(lang, word string) ([]string, error)
 }
 
@@ -35,8 +35,8 @@ func newCacheWithSize(size int) *MemCache {
 }
 
 // Set lang-word as val to cache.
-func (c *MemCache) Set(lang, word string, val []string) error {
-	var value = strings.Join(val, "|")
+func (c *MemCache) Set(lang, word string, val ...string) error {
+	var value = strings.Join(val, wordSeparator)
 	return c.setWithExpiry(lang, word, []byte(value), int(defaultExpiry))
 }
 
