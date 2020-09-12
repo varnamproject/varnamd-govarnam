@@ -33,6 +33,7 @@ var (
 // App is a singleton to share across handlers.
 type App struct {
 	cache Cache
+	log   *log.Logger
 }
 
 // varnamd configurations
@@ -161,6 +162,7 @@ func main() {
 
 	app := &App{
 		cache: NewMemCache(),
+		log:   log.New(os.Stdout, "", log.Ldate|log.Ltime|log.Lshortfile),
 	}
 
 	startSyncDispatcher()

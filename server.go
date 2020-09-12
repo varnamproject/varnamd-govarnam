@@ -16,6 +16,27 @@ func startDaemon(app *App) {
 	initLanguageChannels()
 	initLearnChannels()
 
+	e, err := initHandlers(app)
+	if err != nil {
+		app.log.Fatalf("error initializing handlers: %s", err)
+	}
+
+	address := fmt.Sprintf("%s:%d", host, port)
+	log.Printf("Listening on %s", address)
+
+	if enableSSL {
+		if err := e.StartTLS(address, certFilePath, keyFilePath); err != nil {
+			log.Fatal(err)
+		}
+	} else {
+		if err := e.Start(address); err != nil {
+			log.Fatal(err)
+		}
+	}
+
+}
+
+func initHandlers(app *App) (*echo.Echo, error) {
 	e := echo.New()
 
 	e.GET("/tl/:langCode/:word", handleTransliteration)
@@ -27,7 +48,7 @@ func startDaemon(app *App) {
 	e.GET("/status", handleStatus)
 
 	if _, err := os.Stat(filepath.Clean(uiDir)); err != nil {
-		log.Fatal("UI path doesnot exist", err)
+		return nil, err
 	}
 
 	e.Static("/", filepath.Clean(uiDir))
@@ -36,9 +57,6 @@ func startDaemon(app *App) {
 		e.POST("/sync/download/{langCode}/enable", handleEnableDownload)
 		e.POST("/sync/download/{langCode}/disable", handleDisableDownload)
 	}
-
-	address := fmt.Sprintf("%s:%d", host, port)
-	log.Printf("Listening on %s", address)
 
 	e.Use(middleware.Recover())
 	e.Use(middleware.Logger())
@@ -64,13 +82,5 @@ func startDaemon(app *App) {
 		// ContentSecurityPolicy: "default-src 'self'",
 	}))
 
-	if enableSSL {
-		if err := e.StartTLS(address, certFilePath, keyFilePath); err != nil {
-			log.Fatal(err)
-		}
-	} else {
-		if err := e.Start(address); err != nil {
-			log.Fatal(err)
-		}
-	}
+	return e, nil
 }
