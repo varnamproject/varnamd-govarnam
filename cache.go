@@ -48,6 +48,7 @@ func (c *MemCache) setWithExpiry(lang, word string, val []byte, expiry int) erro
 // Get lang-word from cache.
 func (c *MemCache) Get(lang, word string) ([]string, error) {
 	var key = fmt.Sprintf("%s-%s", lang, word)
+
 	val, err := c.fc.Get([]byte(key))
 	if err != nil {
 		return nil, err
