@@ -46,6 +46,7 @@ func initHandlers(app *App) (*echo.Echo, error) {
 	e.POST("/learn", handlLearn)
 	e.GET("/languages", handleLanguages)
 	e.GET("/status", handleStatus)
+	e.POST("/train", handleTrain)
 
 	if _, err := os.Stat(filepath.Clean(uiDir)); err != nil {
 		return nil, err

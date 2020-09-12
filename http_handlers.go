@@ -12,9 +12,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/athul/go-libvarnam"
 	"github.com/golang/groupcache"
 	"github.com/labstack/echo/v4"
-	"github.com/varnamproject/libvarnam-golang"
 )
 
 var errCacheSkipped = errors.New("cache skipped")
@@ -57,6 +57,13 @@ type downloadResponse struct {
 type args struct {
 	LangCode string `json:"lang"`
 	Text     string `json:"text"`
+}
+
+//TrainArgs read the incoming data
+type TrainArgs struct {
+	Lang    string `json:"lang" form:"lang"`
+	Pattern string `json:"pattern" form:"pattern"`
+	Word    string `json:"word" form:"word"`
 }
 
 func handleStatus(c echo.Context) error {
@@ -250,6 +257,34 @@ func handlLearn(c echo.Context) error {
 	return c.JSON(http.StatusOK, "success")
 }
 
+func handleTrain(c echo.Context) error {
+	var targs TrainArgs
+	fmt.Println(1)
+	// c.Request().Header.Set("Content-Type", "application/json")
+
+	// if err := c.Bind(&targs); err != nil {
+	// 	fmt.Println("Error 1")
+	// 	return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("error getting metadata. message: %s", err.Error()))
+	// }
+	targs.Lang = c.FormValue("lang")
+	targs.Pattern = c.FormValue("pattern")
+	targs.Word = c.FormValue("word")
+
+	fmt.Println(targs)
+	handle, err := libvarnam.Init(targs.Lang)
+	if err != nil {
+		fmt.Println("Error 2")
+		return fmt.Errorf("failed to get data")
+	}
+	fmt.Println(3)
+	if err := handle.Train(targs.Pattern, targs.Word); err != nil {
+		fmt.Println("Error Trains............")
+		return fmt.Errorf("failed to Train %s. %s", targs.Word, err.Error())
+	}
+	fmt.Println(4)
+	return c.JSON(200, "Word Trained")
+
+}
 func toggleDownloadEnabledStatus(langCode string, status bool) (interface{}, error) {
 	if err := varnamdConfig.setDownloadStatus(langCode, status); err != nil {
 		return nil, err
