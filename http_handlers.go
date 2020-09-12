@@ -213,7 +213,7 @@ func handleLanguages(c echo.Context) error {
 	return c.JSON(http.StatusOK, schemeDetails)
 }
 
-func handlLearn(c echo.Context) error {
+func handleLearn(c echo.Context) error {
 	var a args
 
 	c.Request().Header.Set("Content-Type", "application/json")
