@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -12,7 +11,6 @@ import (
 )
 
 func startDaemon(app *App) {
-
 	initLanguageChannels()
 	initLearnChannels()
 
@@ -22,18 +20,17 @@ func startDaemon(app *App) {
 	}
 
 	address := fmt.Sprintf("%s:%d", host, port)
-	log.Printf("Listening on %s", address)
+	app.log.Printf("Listening on %s", address)
 
 	if enableSSL {
 		if err := e.StartTLS(address, certFilePath, keyFilePath); err != nil {
-			log.Fatal(err)
+			app.log.Fatal(err)
 		}
 	} else {
 		if err := e.Start(address); err != nil {
-			log.Fatal(err)
+			app.log.Fatal(err)
 		}
 	}
-
 }
 
 func initHandlers(app *App) (*echo.Echo, error) {
