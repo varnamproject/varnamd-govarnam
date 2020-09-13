@@ -259,29 +259,19 @@ func handleLearn(c echo.Context) error {
 
 func handleTrain(c echo.Context) error {
 	var targs TrainArgs
-	fmt.Println(1)
-	// c.Request().Header.Set("Content-Type", "application/json")
 
-	// if err := c.Bind(&targs); err != nil {
-	// 	fmt.Println("Error 1")
-	// 	return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("error getting metadata. message: %s", err.Error()))
-	// }
-	targs.Lang = c.FormValue("lang")
-	targs.Pattern = c.FormValue("pattern")
-	targs.Word = c.FormValue("word")
+	c.Request().Header.Set("Content-Type", "application/json")
 
-	fmt.Println(targs)
+	if err := c.Bind(&targs); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("error getting metadata. message: %s", err.Error()))
+	}
 	handle, err := libvarnam.Init(targs.Lang)
 	if err != nil {
-		fmt.Println("Error 2")
 		return fmt.Errorf("failed to get data")
 	}
-	fmt.Println(3)
 	if err := handle.Train(targs.Pattern, targs.Word); err != nil {
-		fmt.Println("Error Trains............")
 		return fmt.Errorf("failed to Train %s. %s", targs.Word, err.Error())
 	}
-	fmt.Println(4)
 	return c.JSON(200, "Word Trained")
 
 }
