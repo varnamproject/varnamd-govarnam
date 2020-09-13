@@ -13,7 +13,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/varnamproject/libvarnam-golang"
+	"github.com/varnamproject/varnamd/libvarnam"
 )
 
 type syncDispatcher struct {
