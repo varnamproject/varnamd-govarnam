@@ -2,11 +2,14 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"path"
 	"runtime"
 	"strings"
 	"time"
+
+	"github.com/knadh/stuffbin"
 )
 
 func initConfig(cfg appConfig) *config {
@@ -51,4 +54,30 @@ func getConfigDir() string {
 	}
 
 	return path.Join(os.Getenv("HOME"), ".varnamd")
+}
+
+// initVFS initializes the stuffbin virtual FileSystem to provide
+// access to bunded static assets to the app.
+func initVFS() (stuffbin.FileSystem, error) {
+	files := []string{
+		"ui/",
+	}
+
+	binPath, err := os.Executable()
+	if err != nil {
+		return nil, err
+	}
+
+	fs, err := stuffbin.UnStuff(binPath)
+	if err != nil {
+		log.Printf("unable to initialize embedded filesystem: %v", err)
+		log.Printf("using local filesystem")
+
+		fs, err = stuffbin.NewLocalFS("/", files...)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return fs, nil
 }

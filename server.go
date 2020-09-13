@@ -2,8 +2,6 @@ package main
 
 import (
 	"net/http"
-	"os"
-	"path/filepath"
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
@@ -32,8 +30,9 @@ func startDaemon(app *App, cfg appConfig) {
 }
 
 func initHandlers(app *App, enableInternalApis bool) (*echo.Echo, error) {
-	e := echo.New()
+	fSrv := app.fs.FileServer()
 
+	e := echo.New()
 	e.GET("/tl/:langCode/:word", handleTransliteration)
 	e.GET("/rtl/:langCode/:word", handleReverseTransliteration)
 	e.GET("/meta/:langCode:", handleMetadata)
@@ -42,11 +41,7 @@ func initHandlers(app *App, enableInternalApis bool) (*echo.Echo, error) {
 	e.GET("/languages", handleLanguages)
 	e.GET("/status", handleStatus)
 
-	if _, err := os.Stat(filepath.Clean(uiDir)); err != nil {
-		return nil, err
-	}
-
-	e.Static("/", filepath.Clean(uiDir))
+	e.GET("/", echo.WrapHandler(fSrv))
 
 	if enableInternalApis {
 		e.POST("/sync/download/{langCode}/enable", handleEnableDownload)
