@@ -93,7 +93,7 @@ func init() {
 	log.Printf("reading config: %s", kf.String("config"))
 
 	if err = kf.Load(file.Provider(kf.String("config")), toml.Parser()); err != nil {
-		log.Fatalf("error reading config: %v", err)
+		log.Printf("error reading config: %v", err)
 	}
 
 }
@@ -123,6 +123,23 @@ func main() {
 	// Read configuration using Koanf.
 	if err := kf.Unmarshal("app", &config); err != nil {
 		log.Fatal(err.Error())
+	}
+
+	// If address is empty run on localhost port 8080.
+	if config.Address == "" {
+		config.Address = ":8080"
+	}
+
+	if config.EnableSSL && (config.CertFilePath == "" || config.KeyFilePath == "") {
+		config.EnableSSL = false
+	}
+
+	if config.SyncInterval < 1*time.Second {
+		config.SyncInterval = 30 * time.Second
+	}
+
+	if config.UpstreamURL == "" {
+		config.UpstreamURL = "https://api.varnamproject.com"
 	}
 
 	maxHandleCount = kf.Int("app.max-handles")
