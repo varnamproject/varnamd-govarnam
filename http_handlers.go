@@ -67,7 +67,7 @@ func handleStatus(c echo.Context) error {
 		Uptime  string `json:"uptime"`
 		standardResponse
 	}{
-		varnamdVersion,
+		buildVersion + "-" + buildDate,
 		uptime.String(),
 		newStandardResponse(),
 	}
