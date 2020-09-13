@@ -13,6 +13,7 @@ import (
 	"github.com/knadh/koanf/parsers/toml"
 	"github.com/knadh/koanf/providers/file"
 	"github.com/knadh/koanf/providers/posflag"
+	"github.com/knadh/stuffbin"
 )
 
 const (
@@ -35,8 +36,6 @@ type appConfig struct {
 var (
 	kf = koanf.New(".")
 
-	uiDir = "ui/"
-
 	varnamdConfig         *config // config instance used across the application
 	syncDispatcherRunning bool
 	startedAt             time.Time
@@ -49,6 +48,7 @@ var (
 type App struct {
 	cache Cache
 	log   *log.Logger
+	fs    stuffbin.FileSystem
 }
 
 // varnamd configurations
@@ -135,9 +135,14 @@ func main() {
 
 	log.Printf("varnamd %s-%s", buildVersion, buildDate)
 
+	fs, err := initVFS()
+	if err != nil {
+		log.Fatal(err.Error())
+	}
 	app := &App{
 		cache: NewMemCache(),
 		log:   log.New(os.Stdout, "", log.Ldate|log.Ltime|log.Lshortfile),
+		fs:    fs,
 	}
 
 	startSyncDispatcher()
