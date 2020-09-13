@@ -306,3 +306,17 @@ func handleDisableDownload(c echo.Context) error {
 
 	return c.JSON(http.StatusOK, data)
 }
+
+// handleIndex is the root handler that renders the Javascript frontend.
+func handleIndex(c echo.Context) error {
+	app, _ := c.Get("app").(*App)
+
+	b, err := app.fs.Read("/index.html")
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+	}
+
+	c.Response().Header().Set("Content-Type", "text/html")
+
+	return c.String(http.StatusOK, string(b))
+}

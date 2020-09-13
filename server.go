@@ -30,8 +30,6 @@ func startDaemon(app *App, cfg appConfig) {
 }
 
 func initHandlers(app *App, enableInternalApis bool) (*echo.Echo, error) {
-	fSrv := app.fs.FileServer()
-
 	e := echo.New()
 	e.GET("/tl/:langCode/:word", handleTransliteration)
 	e.GET("/rtl/:langCode/:word", handleReverseTransliteration)
@@ -41,7 +39,9 @@ func initHandlers(app *App, enableInternalApis bool) (*echo.Echo, error) {
 	e.GET("/languages", handleLanguages)
 	e.GET("/status", handleStatus)
 
-	e.GET("/", echo.WrapHandler(fSrv))
+	e.GET("/", handleIndex)
+
+	e.GET("/*", echo.WrapHandler(app.fs.FileServer()))
 
 	if enableInternalApis {
 		e.POST("/sync/download/{langCode}/enable", handleEnableDownload)
