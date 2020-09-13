@@ -7,9 +7,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/athul/go-libvarnam"
 	"github.com/golang/groupcache"
 	_ "github.com/mattn/go-sqlite3"
+	"github.com/varnamproject/varnamd/libvarnam"
 )
 
 type word struct {

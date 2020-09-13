@@ -12,9 +12,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/athul/go-libvarnam"
 	"github.com/golang/groupcache"
 	"github.com/labstack/echo/v4"
+	"github.com/varnamproject/varnamd/libvarnam"
 )
 
 var errCacheSkipped = errors.New("cache skipped")

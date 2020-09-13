@@ -3,7 +3,7 @@ package main
 import (
 	"log"
 
-	"github.com/athul/go-libvarnam"
+	"github.com/varnamproject/varnamd/libvarnam"
 )
 
 var (
