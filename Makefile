@@ -10,7 +10,7 @@ deps:
 
 .PHONY: build
 build: ## Build the binary (default)
-	go build -o ${BIN} -ldflags="-X 'main.buildVersion=${VERSION}' -X 'main.buildDate=${BUILD_DATE}'"
+	go build -o ${BIN} -ldflags="-X 'main.buildVersion=${VERSION}' -X 'main.buildDate=${BUILD_DATE}' -s -w"
 	stuffbin -a stuff -in ${BIN} -out ${BIN} ${STATIC}
 
 .PHONY: run
