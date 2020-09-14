@@ -9,7 +9,7 @@ import (
 
 	"github.com/golang/groupcache"
 	_ "github.com/mattn/go-sqlite3"
-	"github.com/varnamproject/libvarnam-golang"
+	"github.com/varnamproject/varnamd/libvarnam"
 )
 
 type word struct {
@@ -96,6 +96,12 @@ func transliterate(schemeIdentifier string, word string) (interface{}, error) {
 		return handle.Transliterate(word)
 	})
 }
+
+// func trainwords(schemeIdentifier, word, pattern string) (interface{}, error) {
+// 	return getOrCreateHandler(schemeIdentifier, func(handle *libvarnam.Varnam) (data interface{}, err error) {
+// 		return handle.Train(pattern,word)
+// 	})
+// }
 
 func getWords(schemeIdentifier string, downloadStart int) ([]*word, error) {
 	filepath, _ := getOrCreateHandler(schemeIdentifier, func(handle *libvarnam.Varnam) (data interface{}, err error) {

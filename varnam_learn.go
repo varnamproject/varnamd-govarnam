@@ -3,7 +3,7 @@ package main
 import (
 	"log"
 
-	"github.com/varnamproject/libvarnam-golang"
+	"github.com/varnamproject/varnamd/libvarnam"
 )
 
 var (
