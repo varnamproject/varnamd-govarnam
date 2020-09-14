@@ -14,7 +14,7 @@ import (
 
 	"github.com/golang/groupcache"
 	"github.com/labstack/echo/v4"
-	"github.com/varnamproject/libvarnam-golang"
+	"github.com/varnamproject/varnamd/libvarnam"
 )
 
 var errCacheSkipped = errors.New("cache skipped")
@@ -67,7 +67,7 @@ func handleStatus(c echo.Context) error {
 		Uptime  string `json:"uptime"`
 		standardResponse
 	}{
-		varnamdVersion,
+		buildVersion + "-" + buildDate,
 		uptime.String(),
 		newStandardResponse(),
 	}
@@ -305,4 +305,18 @@ func handleDisableDownload(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, data)
+}
+
+// handleIndex is the root handler that renders the Javascript frontend.
+func handleIndex(c echo.Context) error {
+	app, _ := c.Get("app").(*App)
+
+	b, err := app.fs.Read("/index.html")
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+	}
+
+	c.Response().Header().Set("Content-Type", "text/html")
+
+	return c.String(http.StatusOK, string(b))
 }

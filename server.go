@@ -1,41 +1,36 @@
 package main
 
 import (
-	"fmt"
 	"net/http"
-	"os"
-	"path/filepath"
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 )
 
-func startDaemon(app *App) {
+func startDaemon(app *App, cfg appConfig) {
 	initLanguageChannels()
 	initLearnChannels()
 
-	e, err := initHandlers(app)
+	e, err := initHandlers(app, cfg.EnableInternalApis)
 	if err != nil {
 		app.log.Fatalf("error initializing handlers: %s", err)
 	}
 
-	address := fmt.Sprintf("%s:%d", host, port)
-	app.log.Printf("Listening on %s", address)
+	app.log.Printf("Listening on %s", cfg.Address)
 
-	if enableSSL {
-		if err := e.StartTLS(address, certFilePath, keyFilePath); err != nil {
+	if cfg.EnableSSL {
+		if err := e.StartTLS(cfg.Address, cfg.CertFilePath, cfg.KeyFilePath); err != nil {
 			app.log.Fatal(err)
 		}
 	} else {
-		if err := e.Start(address); err != nil {
+		if err := e.Start(cfg.Address); err != nil {
 			app.log.Fatal(err)
 		}
 	}
 }
 
-func initHandlers(app *App) (*echo.Echo, error) {
+func initHandlers(app *App, enableInternalApis bool) (*echo.Echo, error) {
 	e := echo.New()
-
 	e.GET("/tl/:langCode/:word", handleTransliteration)
 	e.GET("/rtl/:langCode/:word", handleReverseTransliteration)
 	e.GET("/meta/:langCode:", handleMetadata)
@@ -44,11 +39,9 @@ func initHandlers(app *App) (*echo.Echo, error) {
 	e.GET("/languages", handleLanguages)
 	e.GET("/status", handleStatus)
 
-	if _, err := os.Stat(filepath.Clean(uiDir)); err != nil {
-		return nil, err
-	}
+	e.GET("/", handleIndex)
 
-	e.Static("/", filepath.Clean(uiDir))
+	e.GET("/*", echo.WrapHandler(app.fs.FileServer()))
 
 	if enableInternalApis {
 		e.POST("/sync/download/{langCode}/enable", handleEnableDownload)
