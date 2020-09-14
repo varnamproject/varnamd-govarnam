@@ -1,0 +1,10 @@
+[app]
+    address                     = ":8080"
+    enable-internal-api         = false
+    enable-ssl                  = false
+    cert-path                   = ""
+    key-file-path               = ""
+    max-handles                 = 10
+    upstream-url                = "https://api.varnamproject.com"
+    download-enabled-schemes    = ""
+    sync-interval               = "30s"
