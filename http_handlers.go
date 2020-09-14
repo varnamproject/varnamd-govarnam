@@ -281,13 +281,16 @@ func handleTrain(c echo.Context) error {
 	c.Request().Header.Set("Content-Type", "application/json")
 
 	if err := c.Bind(&targs); err != nil {
+		app.log.Printf("error reading request, err: %s", err.Error())
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("error getting metadata. message: %s", err.Error()))
 	}
 	handle, err := libvarnam.Init(targs.Lang)
 	if err != nil {
+		app.log.Printf("libvarnam init failed, err: %s", err.Error())
 		return fmt.Errorf("failed to get data")
 	}
 	if err := handle.Train(targs.Pattern, targs.Word); err != nil {
+		app.log.Printf("error training word: %s, pattern: %s, err:%s", targs.Word, targs.Pattern, err.Error())
 		return fmt.Errorf("failed to Train %s. %s", targs.Word, err.Error())
 	}
 	return c.JSON(200, "Word Trained")
