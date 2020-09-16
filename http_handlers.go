@@ -250,7 +250,7 @@ func handleLanguages(c echo.Context) error {
 	return c.JSON(http.StatusOK, schemeDetails)
 }
 
-func handlLearn(c echo.Context) error {
+func handleLearn(c echo.Context) error {
 	var (
 		a args
 
@@ -276,7 +276,10 @@ func handlLearn(c echo.Context) error {
 }
 
 func handleTrain(c echo.Context) error {
-	var targs TrainArgs
+	var (
+		targs TrainArgs
+		app   = c.Get("app").(*App)
+	)
 
 	c.Request().Header.Set("Content-Type", "application/json")
 
