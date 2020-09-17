@@ -60,9 +60,15 @@ type args struct {
 }
 
 //TrainArgs read the incoming data
-type TrainArgs struct {
+type trainArgs struct {
 	Pattern string `json:"pattern"`
 	Word    string `json:"word"`
+}
+
+//TrainBulkArgs read the incoming data for bulk training.
+type trainBulkArgs struct {
+	Pattern []string `json:"pattern"`
+	Word    string   `json:"word"`
 }
 
 func handleStatus(c echo.Context) error {
@@ -276,7 +282,7 @@ func handleLearn(c echo.Context) error {
 
 func handleTrain(c echo.Context) error {
 	var (
-		targs    TrainArgs
+		targs    trainArgs
 		app      = c.Get("app").(*App)
 		langCode = c.Param("langCode")
 	)
@@ -288,18 +294,60 @@ func handleTrain(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("error getting metadata. message: %s", err.Error()))
 	}
 
-	handle, err := libvarnam.Init(langCode)
-	if err != nil {
-		app.log.Printf("libvarnam init failed, err: %s", err.Error())
-		return fmt.Errorf("failed to get data")
+	ch, ok := trainChannel[langCode]
+	if !ok {
+		app.log.Printf("unknown language requested to learn: %s", langCode)
+		return echo.NewHTTPError(http.StatusBadRequest, "unable to find language to train")
 	}
-	if err := handle.Train(targs.Pattern, targs.Word); err != nil {
-		app.log.Printf("error training word: %s, pattern: %s, err:%s", targs.Word, targs.Pattern, err.Error())
-		return fmt.Errorf("failed to Train %s. %s", targs.Word, err.Error())
-	}
+
+	go func(args trainArgs) { ch <- args }(targs)
+
 	return c.JSON(200, "Word Trained")
 
 }
+
+// handleTrainBulk is an endpoint for training words in the following format.
+// {[
+// 	{word, patterns: []},
+// 	{word, patterns: []},
+// 	{word, patterns: []},
+// 	{word, patterns: []}
+// ]}
+// It will covert each bulk arg to trainArg and will send to train channel.
+// Training is happened at listenForWords method.
+func handleTrainBulk(c echo.Context) error {
+	var (
+		bulkArgs []trainBulkArgs
+		app      = c.Get("app").(*App)
+		langCode = c.Param("langCode")
+	)
+
+	if err := c.Bind(&bulkArgs); err != nil {
+		app.log.Printf("error reading request, err: %s", err.Error())
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("error getting metadata. message: %s", err.Error()))
+	}
+
+	ch, ok := trainChannel[langCode]
+	if !ok {
+		app.log.Printf("unknown language requested to learn: %s", langCode)
+		return echo.NewHTTPError(http.StatusBadRequest, "unable to find language to train")
+	}
+
+	for _, v := range bulkArgs {
+		for _, p := range v.Pattern {
+			go func(args trainArgs) {
+				ch <- args
+			}(trainArgs{
+				Pattern: p,
+				Word:    v.Word,
+			})
+		}
+	}
+
+	return c.JSON(200, "Words Trained")
+
+}
+
 func toggleDownloadEnabledStatus(langCode string, status bool) (interface{}, error) {
 	if err := varnamdConfig.setDownloadStatus(langCode, status); err != nil {
 		return nil, err

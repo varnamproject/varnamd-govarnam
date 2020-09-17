@@ -9,7 +9,7 @@ import (
 
 func startDaemon(app *App, cfg appConfig) {
 	initLanguageChannels()
-	initLearnChannels()
+	app.initChannels()
 
 	e, err := initHandlers(app, cfg.EnableInternalApis)
 	if err != nil {
@@ -39,6 +39,7 @@ func initHandlers(app *App, enableInternalApis bool) (*echo.Echo, error) {
 	e.GET("/languages", handleLanguages)
 	e.GET("/status", handleStatus)
 	e.POST("/train/:langCode", handleTrain)
+	e.POST("/train/bulk/:langCode", handleTrainBulk)
 
 	e.GET("/", handleIndex)
 

@@ -60,7 +60,6 @@ func initLanguageChannels() {
 
 func getOrCreateHandler(schemeIdentifier string, f func(handle *libvarnam.Varnam) (data interface{}, err error)) (data interface{}, err error) {
 	ch, ok := languageChannels[schemeIdentifier]
-
 	if !ok {
 		return nil, errors.New("invalid scheme identifier")
 	}
