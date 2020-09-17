@@ -38,15 +38,15 @@ func initHandlers(app *App, enableInternalApis bool) (*echo.Echo, error) {
 	e.POST("/learn", handleLearn)
 	e.GET("/languages", handleLanguages)
 	e.GET("/status", handleStatus)
-	e.POST("/train", handleTrain)
+	e.POST("/train/:langCode", handleTrain)
 
 	e.GET("/", handleIndex)
 
 	e.GET("/*", echo.WrapHandler(app.fs.FileServer()))
 
 	if enableInternalApis {
-		e.POST("/sync/download/{langCode}/enable", handleEnableDownload)
-		e.POST("/sync/download/{langCode}/disable", handleDisableDownload)
+		e.POST("/sync/download/:langCode/enable", handleEnableDownload)
+		e.POST("/sync/download/:langCode/disable", handleDisableDownload)
 	}
 
 	e.Use(middleware.Recover())

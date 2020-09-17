@@ -61,9 +61,8 @@ type args struct {
 
 //TrainArgs read the incoming data
 type TrainArgs struct {
-	Lang    string `json:"lang" form:"lang"`
-	Pattern string `json:"pattern" form:"pattern"`
-	Word    string `json:"word" form:"word"`
+	Pattern string `json:"pattern"`
+	Word    string `json:"word"`
 }
 
 func handleStatus(c echo.Context) error {
@@ -277,8 +276,9 @@ func handleLearn(c echo.Context) error {
 
 func handleTrain(c echo.Context) error {
 	var (
-		targs TrainArgs
-		app   = c.Get("app").(*App)
+		targs    TrainArgs
+		app      = c.Get("app").(*App)
+		langCode = c.Param("langCode")
 	)
 
 	c.Request().Header.Set("Content-Type", "application/json")
@@ -287,7 +287,8 @@ func handleTrain(c echo.Context) error {
 		app.log.Printf("error reading request, err: %s", err.Error())
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("error getting metadata. message: %s", err.Error()))
 	}
-	handle, err := libvarnam.Init(targs.Lang)
+
+	handle, err := libvarnam.Init(langCode)
 	if err != nil {
 		app.log.Printf("libvarnam init failed, err: %s", err.Error())
 		return fmt.Errorf("failed to get data")
