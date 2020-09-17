@@ -303,7 +303,6 @@ func handleTrain(c echo.Context) error {
 	go func(args trainArgs) { ch <- args }(targs)
 
 	return c.JSON(200, "Word Trained")
-
 }
 
 // handleTrainBulk is an endpoint for training words in the following format.
@@ -345,7 +344,6 @@ func handleTrainBulk(c echo.Context) error {
 	}
 
 	return c.JSON(200, "Words Trained")
-
 }
 
 func toggleDownloadEnabledStatus(langCode string, status bool) (interface{}, error) {

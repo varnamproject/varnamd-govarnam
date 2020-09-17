@@ -81,3 +81,30 @@ func initVFS() (stuffbin.FileSystem, error) {
 
 	return fs, nil
 }
+
+func initAppConfig() (appConfig, error) {
+	var config appConfig
+	// Read configuration using Koanf.
+	if err := kf.Unmarshal("app", &config); err != nil {
+		return config, err
+	}
+
+	// If address is empty run on localhost port 8080.
+	if config.Address == "" {
+		config.Address = ":8080"
+	}
+
+	if config.EnableSSL && (config.CertFilePath == "" || config.KeyFilePath == "") {
+		config.EnableSSL = false
+	}
+
+	if config.SyncInterval < 1*time.Second {
+		config.SyncInterval = 30 * time.Second
+	}
+
+	if config.UpstreamURL == "" {
+		config.UpstreamURL = "https://api.varnamproject.com"
+	}
+
+	return config, nil
+}

@@ -1,7 +1,9 @@
 package main
 
 import (
+	"encoding/base64"
 	"net/http"
+	"strings"
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
@@ -11,12 +13,9 @@ func startDaemon(app *App, cfg appConfig) {
 	initLanguageChannels()
 	app.initChannels()
 
-	e, err := initHandlers(app, cfg.EnableInternalApis)
-	if err != nil {
-		app.log.Fatalf("error initializing handlers: %s", err)
-	}
+	e := initHandlers(app, cfg.EnableInternalApis)
 
-	app.log.Printf("Listening on %s", cfg.Address)
+	app.log.Printf("🚀 starting varnamd\nListening on %s", cfg.Address)
 
 	if cfg.EnableSSL {
 		if err := e.StartTLS(cfg.Address, cfg.CertFilePath, cfg.KeyFilePath); err != nil {
@@ -29,7 +28,7 @@ func startDaemon(app *App, cfg appConfig) {
 	}
 }
 
-func initHandlers(app *App, enableInternalApis bool) (*echo.Echo, error) {
+func initHandlers(app *App, enableInternalApis bool) *echo.Echo {
 	e := echo.New()
 	e.GET("/tl/:langCode/:word", handleTransliteration)
 	e.GET("/rtl/:langCode/:word", handleReverseTransliteration)
@@ -38,8 +37,8 @@ func initHandlers(app *App, enableInternalApis bool) (*echo.Echo, error) {
 	e.POST("/learn", handleLearn)
 	e.GET("/languages", handleLanguages)
 	e.GET("/status", handleStatus)
-	e.POST("/train/:langCode", handleTrain)
-	e.POST("/train/bulk/:langCode", handleTrainBulk)
+	e.POST("/train/:langCode", authUser(handleTrain))
+	e.POST("/train/bulk/:langCode", authUser(handleTrainBulk))
 
 	e.GET("/", handleIndex)
 
@@ -74,5 +73,46 @@ func initHandlers(app *App, enableInternalApis bool) (*echo.Echo, error) {
 		// ContentSecurityPolicy: "default-src 'self'",
 	}))
 
-	return e, nil
+	return e
+}
+
+// authUser as a separate method to apply this middleware only for selected endpoints.
+func authUser(next echo.HandlerFunc) echo.HandlerFunc {
+	return func(c echo.Context) error {
+		var app = c.Get("app").(*App)
+
+		if authEnabled {
+			auth := strings.Split(c.Request().Header.Get("Authorization"), " ")
+			if len(auth) < 2 {
+				app.log.Printf("authorization header not found")
+				return echo.NewHTTPError(http.StatusUnauthorized, "authorization header not found")
+			}
+
+			if strings.ToLower(auth[0]) != "basic" {
+				app.log.Printf("authorization header not found")
+				return echo.NewHTTPError(http.StatusUnauthorized, "authorization details not found")
+			}
+
+			creds, err := base64.StdEncoding.DecodeString(auth[1])
+			if err != nil {
+				app.log.Printf("error decoding auth headers, error: %s", err.Error())
+				return echo.NewHTTPError(http.StatusUnauthorized, "authorization failed, failed to decode authstring")
+			}
+
+			authCreds := strings.Split(string(creds), ":")
+
+			user, ok := users[strings.TrimSpace(authCreds[0])]
+			if !ok {
+				app.log.Printf("user not found")
+				return echo.NewHTTPError(http.StatusUnauthorized, "authorization failed, user not found")
+			}
+
+			if user["password"] != strings.TrimSpace(authCreds[1]) {
+				app.log.Printf("password mismatch")
+				return echo.NewHTTPError(http.StatusUnauthorized, "authorization failed, password mismatch")
+			}
+		}
+
+		return next(c)
+	}
 }
