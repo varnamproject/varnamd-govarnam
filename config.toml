@@ -1,5 +1,4 @@
 [app]
-    address                     = ":8080"
     enable-internal-api         = false
     enable-ssl                  = false
     cert-path                   = ""

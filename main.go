@@ -38,7 +38,7 @@ var (
 )
 
 type appConfig struct {
-	Address string `koanf:"address"`
+	Address string
 
 	EnableInternalApis bool   `koanf:"enable-internal-api"` // internal APIs are not exposed to public
 	EnableSSL          bool   `koanf:"enable-ssl"`
@@ -78,6 +78,9 @@ func init() {
 
 	// Create  config flag to read 'config.toml' from user.
 	flagSet.String("config", "config.toml", "Path to the TOML configuration file")
+
+	flagSet.Int("p", 8080, "Run daemon in specified port")
+	flagSet.String("host", "", "Host for the varnam daemon server")
 
 	// Create flag for version check.
 	flagSet.Bool("version", false, "Current version of the build")

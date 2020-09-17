@@ -91,7 +91,7 @@ func initAppConfig() (appConfig, error) {
 
 	// If address is empty run on localhost port 8080.
 	if config.Address == "" {
-		config.Address = ":8080"
+		config.Address = fmt.Sprintf("%s:%d", kf.String("host"), kf.Int("p"))
 	}
 
 	if config.EnableSSL && (config.CertFilePath == "" || config.KeyFilePath == "") {
