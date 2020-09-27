@@ -180,6 +180,19 @@ func (v *Varnam) Learn(text string) error {
 	return nil
 }
 
+// Learn from given input text.
+func (v *Varnam) DeleteWord(text string) error {
+	rc := C.varnam_delete_word(v.handle, C.CString(text))
+
+	if rc != 0 {
+		errorCode := (int)(rc)
+
+		return &VarnamError{errorCode: errorCode, message: v.getVarnamError(errorCode)}
+	}
+
+	return nil
+}
+
 func (v *Varnam) getVarnamError(errorCode int) string {
 	errormessage := C.varnam_get_last_error(v.handle)
 	varnamErrorMsg := C.GoString(errormessage)

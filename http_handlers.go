@@ -359,6 +359,29 @@ func handleTrainBulk(c echo.Context) error {
 	return c.JSON(200, "Words Trained")
 }
 
+// Delete a word
+func handleDelete(c echo.Context) error {
+	var (
+		a args
+
+		app = c.Get("app").(*App)
+	)
+
+	c.Request().Header.Set("Content-Type", "application/json")
+
+	if err := c.Bind(&a); err != nil {
+		app.log.Printf("error in binding request details for delete, err: %s", err.Error())
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("error getting metadata. message: %s", err.Error()))
+	}
+
+	_, err := deleteWord(a.LangCode, a.Text)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("error: %s", err.Error()))
+	}
+
+	return c.JSON(http.StatusOK, "success")
+}
+
 func toggleDownloadEnabledStatus(langCode string, status bool) (interface{}, error) {
 	if err := varnamdConfig.setDownloadStatus(langCode, status); err != nil {
 		return nil, err
