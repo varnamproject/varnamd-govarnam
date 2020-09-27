@@ -260,12 +260,12 @@ func handleLanguageDownload(c echo.Context) error {
 		langCode = c.Param("langCode")
 	)
 
-	filepath, err = getSchemeFilePath(langCode)
+	filepath, err := getSchemeFilePath(langCode)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("error: %s", err.Error()))
 	}
 
-	return c.File(filepath)
+	return c.Attachment(filepath.(string), langCode + ".vst")
 }
 
 func handleLearn(c echo.Context) error {
