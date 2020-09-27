@@ -255,6 +255,19 @@ func handleLanguages(c echo.Context) error {
 	return c.JSON(http.StatusOK, schemeDetails)
 }
 
+func handleLanguageDownload(c echo.Context) error {
+	var (
+		langCode = c.Param("langCode")
+	)
+
+	filepath, err = getSchemeFilePath(langCode)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("error: %s", err.Error()))
+	}
+
+	return c.File(filepath)
+}
+
 func handleLearn(c echo.Context) error {
 	var (
 		a args

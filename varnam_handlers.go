@@ -176,3 +176,9 @@ func sendHandlerToChannel(schemeIdentifier string, handle *libvarnam.Varnam, ch 
 	default:
 	}
 }
+
+func getSchemeFilePath(schemeIdentifier string) {
+	return getOrCreateHandler(schemeIdentifier, func(handle *libvarnam.Varnam) (data interface{}, err error) {
+		return handle.GetSchemeFilePath(schemeIdentifier), nil
+	})
+}
