@@ -315,6 +315,8 @@ func handleTrain(c echo.Context) error {
 
 	go func(args trainArgs) { ch <- args }(targs)
 
+	app.cache.Delete(langCode, targs.Pattern)
+
 	return c.JSON(200, "Word Trained")
 }
 
@@ -378,6 +380,8 @@ func handleDelete(c echo.Context) error {
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("error: %s", err.Error()))
 	}
+
+	app.cache.Clear()
 
 	return c.JSON(http.StatusOK, "success")
 }
