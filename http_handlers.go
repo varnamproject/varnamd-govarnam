@@ -265,7 +265,7 @@ func handleLanguageDownload(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("error: %s", err.Error()))
 	}
 
-	return c.Attachment(filepath.(string), langCode + ".vst")
+	return c.Attachment(filepath.(string), langCode+".vst")
 }
 
 func handleLearn(c echo.Context) error {
@@ -376,8 +376,8 @@ func handleDelete(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("error getting metadata. message: %s", err.Error()))
 	}
 
-	_, err := deleteWord(a.LangCode, a.Text)
-	if err != nil {
+	if _, err := deleteWord(a.LangCode, a.Text); err != nil {
+		app.log.Printf("error deleting word, err: %s", err.Error())
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("error: %s", err.Error()))
 	}
 
