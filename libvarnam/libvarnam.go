@@ -46,6 +46,11 @@ func (v *Varnam) GetSuggestionsFilePath() string {
 	return C.GoString(C.varnam_get_suggestions_file(v.handle))
 }
 
+// GetSchemeFilePath returns the scheme file (.vst)
+func (v *Varnam) GetSchemeFilePath() string {
+	return C.GoString(C.varnam_get_scheme_file(v.handle))
+}
+
 // GetCorpusDetails will return corpus details.
 func (v *Varnam) GetCorpusDetails() (*CorpusDetails, error) {
 	var details *C.vcorpus_details
@@ -165,6 +170,19 @@ func GetAllSchemeDetails() []*SchemeDetails {
 // Learn from given input text.
 func (v *Varnam) Learn(text string) error {
 	rc := C.varnam_learn(v.handle, C.CString(text))
+
+	if rc != 0 {
+		errorCode := (int)(rc)
+
+		return &VarnamError{errorCode: errorCode, message: v.getVarnamError(errorCode)}
+	}
+
+	return nil
+}
+
+// Learn from given input text.
+func (v *Varnam) DeleteWord(text string) error {
+	rc := C.varnam_delete_word(v.handle, C.CString(text))
 
 	if rc != 0 {
 		errorCode := (int)(rc)

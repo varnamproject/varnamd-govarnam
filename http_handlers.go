@@ -255,6 +255,19 @@ func handleLanguages(c echo.Context) error {
 	return c.JSON(http.StatusOK, schemeDetails)
 }
 
+func handleLanguageDownload(c echo.Context) error {
+	var (
+		langCode = c.Param("langCode")
+	)
+
+	filepath, err := getSchemeFilePath(langCode)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("error: %s", err.Error()))
+	}
+
+	return c.Attachment(filepath.(string), langCode+".vst")
+}
+
 func handleLearn(c echo.Context) error {
 	var (
 		a args
@@ -302,6 +315,8 @@ func handleTrain(c echo.Context) error {
 
 	go func(args trainArgs) { ch <- args }(targs)
 
+	app.cache.Delete(langCode, targs.Pattern)
+
 	return c.JSON(200, "Word Trained")
 }
 
@@ -344,6 +359,31 @@ func handleTrainBulk(c echo.Context) error {
 	}
 
 	return c.JSON(200, "Words Trained")
+}
+
+// Delete a word
+func handleDelete(c echo.Context) error {
+	var (
+		a args
+
+		app = c.Get("app").(*App)
+	)
+
+	c.Request().Header.Set("Content-Type", "application/json")
+
+	if err := c.Bind(&a); err != nil {
+		app.log.Printf("error in binding request details for delete, err: %s", err.Error())
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("error getting metadata. message: %s", err.Error()))
+	}
+
+	if _, err := deleteWord(a.LangCode, a.Text); err != nil {
+		app.log.Printf("error deleting word, err: %s", err.Error())
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("error: %s", err.Error()))
+	}
+
+	app.cache.Clear()
+
+	return c.JSON(http.StatusOK, "success")
 }
 
 func toggleDownloadEnabledStatus(langCode string, status bool) (interface{}, error) {
