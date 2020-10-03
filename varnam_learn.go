@@ -57,7 +57,7 @@ func learnWordsFromFile(c echo.Context, langCode string, fileToLearn string) {
 	start := time.Now()
 
 	sendOutput := func(msg string) {
-		c.Response().Write([]byte(msg))
+		_, _ = c.Response().Write([]byte(msg))
 		c.Response().Flush()
 	}
 
@@ -79,8 +79,4 @@ func learnWordsFromFile(c echo.Context, langCode string, fileToLearn string) {
 
 		return
 	})
-}
-
-type learnFile struct {
-	lang string
 }

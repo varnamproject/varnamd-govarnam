@@ -379,7 +379,7 @@ func handleTrain(c echo.Context) error {
 
 	go func(args trainArgs) { ch <- args }(targs)
 
-	app.cache.Delete(langCode, targs.Pattern)
+	_, _ = app.cache.Delete(langCode, targs.Pattern)
 
 	return c.JSON(200, "Word Trained")
 }
