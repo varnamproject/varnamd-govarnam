@@ -75,6 +75,12 @@ type trainBulkArgs struct {
 	Word    string   `json:"word"`
 }
 
+// PackDownloadRequestArgs is the args to download pack from upstream
+type PackDownloadRequestArgs struct {
+	LangCode              string `json:"lang"`
+	PackVersionIdentifier string `json:"pack"`
+}
+
 func handleStatus(c echo.Context) error {
 	uptime := time.Since(startedAt)
 
@@ -501,4 +507,82 @@ func handleIndex(c echo.Context) error {
 	c.Response().Header().Set("Content-Type", "text/html")
 
 	return c.String(http.StatusOK, string(b))
+}
+
+func handlePacks(c echo.Context) error {
+	var (
+		langCode = c.Param("langCode")
+	)
+
+	if langCode != "" {
+		pack, err := getPackInfo(langCode)
+		if err != nil {
+			return echo.NewHTTPError(http.StatusBadRequest, err.Error())
+		}
+		return c.JSON(http.StatusOK, pack)
+	}
+
+	packs, err := getPacksInfo()
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+	}
+
+	return c.JSON(http.StatusOK, packs)
+}
+
+func handlePackVersionInfo(c echo.Context) error {
+	var (
+		langCode              = c.Param("langCode")
+		packVersionIdentifier = c.Param("packVersionIdentifier")
+	)
+
+	pack, err := getPackVersionInfo(langCode, packVersionIdentifier)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
+	}
+
+	return c.JSON(http.StatusOK, pack)
+}
+
+func handlePacksDownload(c echo.Context) error {
+	var (
+		packVersionIdentifier = c.Param("packVersionIdentifier")
+		langCode              = c.Param("langCode")
+	)
+
+	if _, err := getPackInfo(langCode); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
+	}
+
+	packFilePath, err := getPackFilePath(langCode, packVersionIdentifier)
+
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+	}
+
+	return c.Attachment(packFilePath, packVersionIdentifier)
+}
+
+// varnamd Admin can download packs from upstream
+// This is an internal function
+func handlePackDownloadRequest(c echo.Context) error {
+	var (
+		args PackDownloadRequestArgs
+		app  = c.Get("app").(*App)
+		err  error
+	)
+
+	if err := c.Bind(&args); err != nil {
+		app.log.Printf("error reading request, err: %s", err.Error())
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("error getting metadata. message: %s", err.Error()))
+	}
+
+	packFilePath, err := downloadPackFile(args.LangCode, args.PackVersionIdentifier)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("error downloading pack: %s", err.Error()))
+	}
+
+	learnWordsFromFile(c, args.LangCode, packFilePath)
+
+	return c.JSON(http.StatusOK, "success")
 }

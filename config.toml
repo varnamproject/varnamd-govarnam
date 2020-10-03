@@ -1,5 +1,5 @@
 [app]
-    enable-internal-api         = false
+    enable-internal-api         = true
     enable-ssl                  = false
     cert-path                   = ""
     key-file-path               = ""

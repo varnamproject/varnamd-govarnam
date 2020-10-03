@@ -36,12 +36,11 @@ func initHandlers(app *App, enableInternalApis bool) *echo.Echo {
 	e.GET("/download/:langCode/:downloadStart", handleDownload)
 	e.GET("/languages", handleLanguages)
 	e.GET("/languages/:langCode/download", handleLanguageDownload)
+	e.GET("/packs", handlePacks)
+	e.GET("/packs/:langCode", handlePacks)
+	e.GET("/packs/:langCode/:packVersionIdentifier", handlePackVersionInfo)
+	e.GET("/packs/:langCode/:packVersionIdentifier/download", handlePacksDownload)
 	e.GET("/status", handleStatus)
-
-	e.POST("/learn", handleLearn)
-	e.POST("/train/:langCode", authUser(handleTrain))
-	e.POST("/train/bulk/:langCode", authUser(handleTrainBulk))
-	e.POST("/delete", authUser(handleDelete))
 
 	e.GET("/", handleIndex)
 
@@ -55,6 +54,8 @@ func initHandlers(app *App, enableInternalApis bool) *echo.Echo {
 		e.POST("/learn/upload/:langCode", authUser(handleLearnFileUpload))
 		e.POST("/train/:langCode", authUser(handleTrain))
 		e.POST("/train/bulk/:langCode", authUser(handleTrainBulk))
+		e.POST("/delete", authUser(handleDelete))
+		e.POST("/packs/download", handlePackDownloadRequest)
 	}
 
 	e.Use(middleware.Recover())
