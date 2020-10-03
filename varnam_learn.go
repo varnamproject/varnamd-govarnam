@@ -1,8 +1,13 @@
 package main
 
 import (
+	"fmt"
+	"net/http"
+	"os"
 	"strings"
+	"time"
 
+	"github.com/labstack/echo/v4"
 	"github.com/varnamproject/varnamd/libvarnam"
 )
 
@@ -44,4 +49,38 @@ func (app *App) listenForWords(lang string, handle *libvarnam.Varnam) {
 			}
 		}
 	}
+}
+
+func learnWordsFromFile(c echo.Context, langCode string, fileToLearn string) {
+	c.Response().WriteHeader(http.StatusOK)
+
+	start := time.Now()
+
+	sendOutput := func(msg string) {
+		c.Response().Write([]byte(msg))
+		c.Response().Flush()
+	}
+
+	sendOutput(fmt.Sprintf("Learning from %s\n", fileToLearn))
+
+	_, _ = getOrCreateHandler(langCode, func(handle *libvarnam.Varnam) (data interface{}, err error) {
+		learnStatus, err := handle.LearnFromFile(fileToLearn)
+		end := time.Now()
+
+		if err != nil {
+			sendOutput(fmt.Sprintf("Error learning from '%s'\n", err.Error()))
+		} else {
+			sendOutput(fmt.Sprintf("Learned from '%s'. TotalWords: %d, Failed: %d. Took %s\n", fileToLearn, learnStatus.TotalWords, learnStatus.Failed, end.Sub(start)))
+		}
+
+		if err = os.Remove(fileToLearn); err != nil {
+			sendOutput(fmt.Sprintf("Error deleting '%s'. %s\n", fileToLearn, err.Error()))
+		}
+
+		return
+	})
+}
+
+type learnFile struct {
+	lang string
 }

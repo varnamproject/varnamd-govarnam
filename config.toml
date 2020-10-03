@@ -7,7 +7,7 @@
     upstream-url                = "https://api.varnamproject.com"
     download-enabled-schemes    = ""
     sync-interval               = "30s"
-    accounts-enabled            = true
+    accounts-enabled            = false
 [users]
     [users.admin]
         password = "pass"

@@ -50,6 +50,11 @@ func initHandlers(app *App, enableInternalApis bool) *echo.Echo {
 	if enableInternalApis {
 		e.POST("/sync/download/:langCode/enable", handleEnableDownload)
 		e.POST("/sync/download/:langCode/disable", handleDisableDownload)
+
+		e.POST("/learn", authUser(handleLearn))
+		e.POST("/learn/upload/:langCode", authUser(handleLearnFileUpload))
+		e.POST("/train/:langCode", authUser(handleTrain))
+		e.POST("/train/bulk/:langCode", authUser(handleTrainBulk))
 	}
 
 	e.Use(middleware.Recover())

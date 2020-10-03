@@ -7,7 +7,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
+	"io/ioutil"
 	"net/http"
+	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
@@ -275,8 +279,6 @@ func handleLearn(c echo.Context) error {
 		app = c.Get("app").(*App)
 	)
 
-	c.Request().Header.Set("Content-Type", "application/json")
-
 	if err := c.Bind(&a); err != nil {
 		app.log.Printf("error in binding request details for learn, err: %s", err.Error())
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("error getting metadata. message: %s", err.Error()))
@@ -289,6 +291,68 @@ func handleLearn(c echo.Context) error {
 	}
 
 	go func(word string) { ch <- word }(a.Text)
+
+	return c.JSON(http.StatusOK, "success")
+}
+
+func handleLearnFileUpload(c echo.Context) error {
+	var (
+		app      = c.Get("app").(*App)
+		langCode = c.Param("langCode")
+	)
+
+	// Multipart form
+	form, err := c.MultipartForm()
+	if err != nil {
+		app.log.Printf("failed to read form from request, language: %s, error: %s", langCode, err.Error())
+		return echo.NewHTTPError(http.StatusBadRequest, "request data not found")
+	}
+
+	files, ok := form.File["files"]
+	if !ok {
+		app.log.Printf("files not found, language: %s", langCode)
+		return echo.NewHTTPError(http.StatusBadRequest, "no files were uploaded")
+	}
+
+	if _, ok := learnChannels[langCode]; !ok {
+		app.log.Printf("learn file upload error: unknown language requested to learn: %s", langCode)
+		return echo.NewHTTPError(http.StatusBadRequest, "unable to find language to train")
+	}
+
+	// Copy files first
+	for _, file := range files {
+		// Source
+		src, err := file.Open()
+		if err != nil {
+			app.log.Printf("learn file upload error, err: %s", err.Error())
+			return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+		}
+
+		// Destination
+		tempDir, err := ioutil.TempDir(os.TempDir(), "varnamd")
+		if err != nil {
+			app.log.Printf("learn file upload error, err: %s", err.Error())
+			return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+		}
+
+		dst, err := os.Create(filepath.Join(tempDir, file.Filename))
+		if err != nil {
+			app.log.Printf("learn file upload error, err: %s", err.Error())
+			return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+		}
+
+		// Copy
+		if _, err = io.Copy(dst, src); err != nil {
+			app.log.Printf("learn file upload error, err: %s", err.Error())
+			return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+		}
+
+		// Explicitely closing resources.
+		_ = dst.Close()
+		_ = src.Close()
+
+		learnWordsFromFile(c, langCode, dst.Name())
+	}
 
 	return c.JSON(http.StatusOK, "success")
 }
