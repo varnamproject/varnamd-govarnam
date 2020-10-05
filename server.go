@@ -38,8 +38,9 @@ func initHandlers(app *App, enableInternalApis bool) *echo.Echo {
 	e.GET("/languages/:langCode/download", handleLanguageDownload)
 	e.GET("/packs", handlePacks)
 	e.GET("/packs/:langCode", handlePacks)
-	e.GET("/packs/:langCode/:packVersionIdentifier", handlePackVersionInfo)
-	e.GET("/packs/:langCode/:packVersionIdentifier/download", handlePacksDownload)
+	e.GET("/packs/:langCode/:packIdentifier", handlePackInfo)
+	e.GET("/packs/:langCode/:packIdentifier/:packVersionIdentifier", handlePackVersionInfo)
+	e.GET("/packs/:langCode/:packIdentifier/:packVersionIdentifier/download", handlePacksDownload)
 	e.GET("/status", handleStatus)
 
 	e.GET("/", handleIndex)

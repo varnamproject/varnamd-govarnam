@@ -51,7 +51,7 @@ func (app *App) listenForWords(lang string, handle *libvarnam.Varnam) {
 	}
 }
 
-func learnWordsFromFile(c echo.Context, langCode string, fileToLearn string) {
+func learnWordsFromFile(c echo.Context, langCode string, fileToLearn string, removeFile bool) {
 	c.Response().WriteHeader(http.StatusOK)
 
 	start := time.Now()
@@ -73,8 +73,10 @@ func learnWordsFromFile(c echo.Context, langCode string, fileToLearn string) {
 			sendOutput(fmt.Sprintf("Learned from '%s'. TotalWords: %d, Failed: %d. Took %s\n", fileToLearn, learnStatus.TotalWords, learnStatus.Failed, end.Sub(start)))
 		}
 
-		if err = os.Remove(fileToLearn); err != nil {
-			sendOutput(fmt.Sprintf("Error deleting '%s'. %s\n", fileToLearn, err.Error()))
+		if removeFile {
+			if err = os.Remove(fileToLearn); err != nil {
+				sendOutput(fmt.Sprintf("Error deleting '%s'. %s\n", fileToLearn, err.Error()))
+			}
 		}
 
 		return
