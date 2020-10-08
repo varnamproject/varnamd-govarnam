@@ -284,7 +284,7 @@ func getPacksInfoPath() string {
 
 func createPacksDir() error {
 	packsDir := getPacksDir()
-	return os.MkdirAll(packsDir, 0644)
+	return os.MkdirAll(packsDir, 0750)
 }
 
 func getPacksDir() string {
