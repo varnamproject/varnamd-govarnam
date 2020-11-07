@@ -116,7 +116,7 @@ func syncRequired() bool {
 // Starts the sync process only if it is not running
 func startSyncDispatcher() {
 	if syncRequired() && !syncDispatcherRunning {
-		sync := newSyncDispatcher(varnamdConfig.syncInterval * time.Second)
+		sync := newSyncDispatcher(varnamdConfig.syncInterval / time.Second)
 		sync.start()
 		sync.runNow() // run one round of sync immediatly rather than waiting for the next interval to occur
 

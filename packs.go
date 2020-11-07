@@ -1,6 +1,7 @@
 package main
 
 import (
+	"compress/gzip"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -34,6 +35,8 @@ type packDownload struct {
 	FilePath string
 }
 
+var packsInfoCached []Pack
+
 func fileExists(filename string) bool {
 	info, err := os.Stat(filename)
 	if os.IsNotExist(err) {
@@ -50,13 +53,11 @@ func updatePacksInfo(langCode string, pack *Pack, packVersion *PackVersion) erro
 	}
 
 	var (
-		existingPackIndex int
-		existingPack      *Pack = nil
+		existingPack *Pack = nil
 	)
 
-	for index, packR := range packs {
+	for _, packR := range packs {
 		if packR.Identifier == pack.Identifier {
-			existingPackIndex = index
 			existingPack = &packR
 			break
 		}
@@ -65,25 +66,26 @@ func updatePacksInfo(langCode string, pack *Pack, packVersion *PackVersion) erro
 	if existingPack == nil {
 		// will have one element
 		pack.Versions = []PackVersion{*packVersion}
-
-		// Append new pack
-		packs = append(packs, *pack)
 	} else {
 		// Append new pack version
 		existingPack.Versions = append(existingPack.Versions, *packVersion)
 
-		packs[existingPackIndex] = *existingPack
+		pack = existingPack
 	}
 
-	file, err := json.MarshalIndent(packs, "", "  ")
+	// Save pack.json
+	packInfoPath := path.Join(getPacksDir(), pack.LangCode, pack.Identifier, "pack.json")
+	file, err := json.MarshalIndent(pack, "", "  ")
 	if err != nil {
 		return err
 	}
 
-	err = ioutil.WriteFile(getPacksInfoPath(), file, 0644)
+	err = ioutil.WriteFile(packInfoPath, file, 0644)
 	if err != nil {
 		return err
 	}
+
+	packsInfoCached = nil
 
 	return nil
 }
@@ -134,7 +136,7 @@ func downloadPackFile(langCode, packIdentifier, packVersionIdentifier string) (p
 	}
 
 	fileURL := fmt.Sprintf("%s/packs/%s/%s/%s/download", varnamdConfig.upstream, langCode, packIdentifier, packVersionIdentifier)
-	fileDir := path.Join(getPacksDir(), langCode)
+	fileDir := path.Join(getPacksDir(), langCode, packIdentifier)
 	filePath := path.Join(fileDir, packVersionIdentifier)
 
 	if !fileExists(fileDir) {
@@ -156,14 +158,20 @@ func downloadPackFile(langCode, packIdentifier, packVersionIdentifier string) (p
 		return packDownload{}, fmt.Errorf(string(respData))
 	}
 
+	fz, err := gzip.NewReader(resp.Body)
+	if err != nil {
+		return packDownload{}, err
+	}
+	defer fz.Close()
+
 	out, err := os.Create(filePath)
 	if err != nil {
 		return packDownload{}, err
 	}
 	defer out.Close()
 
-	// Write the body to file
-	_, err = io.Copy(out, resp.Body)
+	// Write the gzip decoded content to file
+	_, err = io.Copy(out, fz)
 
 	if err != nil {
 		return packDownload{}, err
@@ -177,8 +185,8 @@ func getPackFilePath(langCode, packIdentifier, packVersionIdentifier string) (st
 		return "", err
 	}
 
-	// Example: .varnamd/ml/ml-basic-1
-	packFilePath := path.Join(getPacksDir(), langCode, packVersionIdentifier)
+	// Example: .varnamd/ml/ml-basic/ml-basic-1.vpf
+	packFilePath := path.Join(getPacksDir(), langCode, packIdentifier, packVersionIdentifier) + ".vpf"
 
 	if !fileExists(packFilePath) {
 		return "", errors.New("Pack file not found")
@@ -255,31 +263,49 @@ func getPacksInfo() ([]Pack, error) {
 		return nil, err
 	}
 
-	packsFilePath := getPacksInfoPath()
-
-	if !fileExists(packsFilePath) {
-		file, err := os.Create(packsFilePath)
-		if err != nil {
-			return nil, err
-		}
-		file.WriteString("[]")
-		defer file.Close()
+	if packsInfoCached != nil {
+		return packsInfoCached, nil
 	}
-
-	packsFile, _ := ioutil.ReadFile(packsFilePath)
 
 	var packsInfo []Pack
 
-	if err := json.Unmarshal(packsFile, &packsInfo); err != nil {
-		err := fmt.Errorf("Parsing packs JSON failed, err: %s", err.Error())
+	files, err := ioutil.ReadDir(getPacksDir())
+	if err != nil {
 		return nil, err
 	}
 
-	return packsInfo, nil
-}
+	for _, langFolder := range files {
+		langFolderPath := path.Join(getPacksDir(), langFolder.Name())
+		if langFolder.IsDir() {
+			// inside ml
+			langFolderFiles, err := ioutil.ReadDir(langFolderPath)
 
-func getPacksInfoPath() string {
-	return getPacksDir() + "/packs.json"
+			if err != nil {
+				return nil, err
+			}
+
+			for _, packFolder := range langFolderFiles {
+				if packFolder.IsDir() {
+					packInfoPath := path.Join(langFolderPath, packFolder.Name(), "pack.json")
+					if fileExists(packInfoPath) {
+						var packInfo Pack
+						packsFile, _ := ioutil.ReadFile(packInfoPath)
+
+						if err := json.Unmarshal(packsFile, &packInfo); err != nil {
+							err := fmt.Errorf("Parsing packs JSON failed, err: %s", err.Error())
+							return nil, err
+						}
+
+						packsInfo = append(packsInfo, packInfo)
+					}
+				}
+			}
+		}
+	}
+
+	packsInfoCached = packsInfo
+
+	return packsInfo, nil
 }
 
 func createPacksDir() error {

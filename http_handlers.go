@@ -11,6 +11,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"path"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -595,7 +596,28 @@ func handlePacksDownload(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
 
-	return c.Attachment(packFilePath, packVersionIdentifier)
+	packFileGzipPath := path.Join(packFilePath + ".gzip")
+
+	if !fileExists(packFileGzipPath) {
+		// compress into gzip
+		packFileBytes, err := ioutil.ReadFile(packFilePath)
+		if err != nil {
+			return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+		}
+
+		var gb bytes.Buffer
+		w := gzip.NewWriter(&gb)
+		w.Write(packFileBytes)
+		w.Close()
+
+		err = ioutil.WriteFile(packFileGzipPath, gb.Bytes(), 0644)
+
+		if err != nil {
+			return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+		}
+	}
+
+	return c.Attachment(packFileGzipPath, packVersionIdentifier)
 }
 
 // varnamd Admin can download packs from upstream
@@ -619,9 +641,13 @@ func handlePackDownloadRequest(c echo.Context) error {
 	}
 
 	// Learn from pack file and don't remove it
-	learnWordsFromFile(c, args.LangCode, downloadResult.FilePath, false)
+	err = importLearningsFromFile(c, args.LangCode, downloadResult.FilePath, false)
 
-	// Update packs.json with our new installed pack
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, fmt.Sprintf("Error importing from '%s'\n", err.Error()))
+	}
+
+	// Add pack.json with the installed pack versions
 	err = updatePacksInfo(args.LangCode, downloadResult.Pack, downloadResult.Version)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())

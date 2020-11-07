@@ -118,6 +118,19 @@ func (v *Varnam) LearnFromFile(filePath string) (*LearnStatus, error) {
 	return &LearnStatus{TotalWords: int(status.total_words), Failed: int(status.failed)}, nil
 }
 
+// ImportFromFile Import learnigns from file (varnam exported file)
+func (v *Varnam) ImportFromFile(filePath string) error {
+	rc := C.varnam_import_learnings_from_file(v.handle, C.CString(filePath))
+
+	if rc != C.VARNAM_SUCCESS {
+		errorCode := (int)(rc)
+
+		return &VarnamError{errorCode: errorCode, message: v.getVarnamError(errorCode)}
+	}
+
+	return nil
+}
+
 // Init initializes varnam bindings.
 func Init(schemeIdentifier string) (*Varnam, error) {
 	var (
@@ -180,7 +193,7 @@ func (v *Varnam) Learn(text string) error {
 	return nil
 }
 
-// Learn from given input text.
+// DeleteWord from given input text.
 func (v *Varnam) DeleteWord(text string) error {
 	rc := C.varnam_delete_word(v.handle, C.CString(text))
 

@@ -82,3 +82,38 @@ func learnWordsFromFile(c echo.Context, langCode string, fileToLearn string, rem
 		return
 	})
 }
+
+func importLearningsFromFile(c echo.Context, langCode string, fileToLearn string, removeFile bool) error {
+	c.Response().WriteHeader(http.StatusOK)
+
+	start := time.Now()
+
+	sendOutput := func(msg string) {
+		_, _ = c.Response().Write([]byte(msg))
+		c.Response().Flush()
+	}
+
+	sendOutput(fmt.Sprintf("Importing from %s\n", fileToLearn))
+
+	var importError error
+
+	_, _ = getOrCreateHandler(langCode, func(handle *libvarnam.Varnam) (data interface{}, err error) {
+		err = handle.ImportFromFile(fileToLearn)
+		end := time.Now()
+
+		if err != nil {
+			importError = err
+		} else {
+			sendOutput(fmt.Sprintf("Import completed. Took %s\n", end.Sub(start)))
+		}
+
+		if removeFile {
+			if err = os.Remove(fileToLearn); err != nil {
+				sendOutput(fmt.Sprintf("Error deleting '%s'. %s\n", fileToLearn, err.Error()))
+			}
+		}
+		return
+	})
+
+	return importError
+}
