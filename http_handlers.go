@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"compress/gzip"
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -13,13 +12,10 @@ import (
 	"os"
 	"path"
 	"path/filepath"
-	"strconv"
-	"strings"
 	"time"
 
-	"github.com/golang/groupcache"
 	"github.com/labstack/echo/v4"
-	"github.com/varnamproject/varnamd/libvarnam"
+	"gitlab.com/subins2000/govarnam/govarnamgo"
 )
 
 var errCacheSkipped = errors.New("cache skipped")
@@ -48,7 +44,7 @@ type transliterationResponse struct {
 }
 
 type metaResponse struct {
-	Result *libvarnam.CorpusDetails `json:"result"`
+	// Result *libvarnam.CorpusDetails `json:"result"`
 	standardResponse
 }
 
@@ -108,13 +104,32 @@ func handleTransliteration(c echo.Context) error {
 
 	words, err := app.cache.Get(langCode, word)
 	if err != nil {
-		w, err := transliterate(langCode, word)
+		result, err := transliterate(c.Request().Context(), langCode, word)
 		if err != nil {
 			app.log.Printf("error in transliterationg, err: %s", err.Error())
 			return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("error transliterating given string. message: %s", err.Error()))
 		}
 
-		words, _ = w.([]string)
+		for _, sug := range result.(govarnamgo.TransliterationResult).ExactMatches {
+			words = append(words, sug.Word)
+		}
+
+		for _, sug := range result.(govarnamgo.TransliterationResult).PatternDictionarySuggestions {
+			words = append(words, sug.Word)
+		}
+
+		for _, sug := range result.(govarnamgo.TransliterationResult).DictionarySuggestions {
+			words = append(words, sug.Word)
+		}
+
+		for _, sug := range result.(govarnamgo.TransliterationResult).GreedyTokenized {
+			words = append(words, sug.Word)
+		}
+
+		for _, sug := range result.(govarnamgo.TransliterationResult).TokenizerSuggestions {
+			words = append(words, sug.Word)
+		}
+
 		_ = app.cache.Set(langCode, word, words...)
 	}
 
@@ -156,112 +171,112 @@ func handleReverseTransliteration(c echo.Context) error {
 	return c.JSON(http.StatusOK, response)
 }
 
-func handleMetadata(c echo.Context) error {
-	var (
-		schemeIdentifier = c.Param("langCode")
-		app              = c.Get("app").(*App)
-	)
+// func handleMetadata(c echo.Context) error {
+// 	var (
+// 		schemeIdentifier = c.Param("langCode")
+// 		app              = c.Get("app").(*App)
+// 	)
 
-	data, err := getOrCreateHandler(schemeIdentifier, func(handle *libvarnam.Varnam) (data interface{}, err error) {
-		details, err := handle.GetCorpusDetails()
-		if err != nil {
-			return nil, err
-		}
+// 	data, err := getOrCreateHandler(schemeIdentifier, func(handle *libvarnam.Varnam) (data interface{}, err error) {
+// 		details, err := handle.GetCorpusDetails()
+// 		if err != nil {
+// 			return nil, err
+// 		}
 
-		return &metaResponse{Result: details, standardResponse: newStandardResponse()}, nil
-	})
-	if err != nil {
-		app.log.Printf("error in getting corpus details for: %s, err: %s", schemeIdentifier, err.Error())
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("error getting metadata. message: %s", err.Error()))
-	}
+// 		return &metaResponse{Result: details, standardResponse: newStandardResponse()}, nil
+// 	})
+// 	if err != nil {
+// 		app.log.Printf("error in getting corpus details for: %s, err: %s", schemeIdentifier, err.Error())
+// 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("error getting metadata. message: %s", err.Error()))
+// 	}
 
-	return c.JSON(http.StatusOK, data)
-}
+// 	return c.JSON(http.StatusOK, data)
+// }
 
-func handleDownload(c echo.Context) error {
-	var (
-		langCode = c.Param("langCode")
-		start, _ = strconv.Atoi(c.Param("downloadStart"))
+// func handleDownload(c echo.Context) error {
+// 	var (
+// 		langCode = c.Param("langCode")
+// 		start, _ = strconv.Atoi(c.Param("downloadStart"))
 
-		app = c.Get("app").(*App)
-	)
+// 		app = c.Get("app").(*App)
+// 	)
 
-	if start < 0 {
-		return echo.NewHTTPError(http.StatusBadRequest, "invalid parameter")
-	}
+// 	if start < 0 {
+// 		return echo.NewHTTPError(http.StatusBadRequest, "invalid parameter")
+// 	}
 
-	fillCache := func(ctx context.Context, key string, dest groupcache.Sink) error {
-		// cache miss, fetch from DB
-		// key is in the form <schemeIdentifier>+<downloadStart>
-		parts := strings.Split(key, "+")
-		schemeID := parts[0]
-		downloadStart, _ := strconv.Atoi(parts[1])
+// 	fillCache := func(ctx context.Context, key string, dest groupcache.Sink) error {
+// 		// cache miss, fetch from DB
+// 		// key is in the form <schemeIdentifier>+<downloadStart>
+// 		parts := strings.Split(key, "+")
+// 		schemeID := parts[0]
+// 		downloadStart, _ := strconv.Atoi(parts[1])
 
-		words, err := getWords(schemeID, downloadStart)
-		if err != nil {
-			return err
-		}
+// 		words, err := getWords(schemeID, downloadStart)
+// 		if err != nil {
+// 			return err
+// 		}
 
-		response := downloadResponse{Count: len(words), Words: words, standardResponse: newStandardResponse()}
+// 		response := downloadResponse{Count: len(words), Words: words, standardResponse: newStandardResponse()}
 
-		b, err := json.Marshal(response)
-		if err != nil {
-			return err
-		}
+// 		b, err := json.Marshal(response)
+// 		if err != nil {
+// 			return err
+// 		}
 
-		// gzipping the response so that it can be served directly
-		var gb bytes.Buffer
-		gWriter := gzip.NewWriter(&gb)
+// 		// gzipping the response so that it can be served directly
+// 		var gb bytes.Buffer
+// 		gWriter := gzip.NewWriter(&gb)
 
-		defer func() { _ = gWriter.Close() }()
+// 		defer func() { _ = gWriter.Close() }()
 
-		_, _ = gWriter.Write(b)
-		_ = gWriter.Flush()
+// 		_, _ = gWriter.Write(b)
+// 		_ = gWriter.Flush()
 
-		if len(words) < downloadPageSize {
-			varnamCtx, _ := ctx.(*varnamCacheContext)
-			varnamCtx.Data = gb.Bytes()
+// 		if len(words) < downloadPageSize {
+// 			varnamCtx, _ := ctx.(*varnamCacheContext)
+// 			varnamCtx.Data = gb.Bytes()
 
-			return errCacheSkipped
-		}
+// 			return errCacheSkipped
+// 		}
 
-		_ = dest.SetBytes(gb.Bytes())
+// 		_ = dest.SetBytes(gb.Bytes())
 
-		return nil
-	}
+// 		return nil
+// 	}
 
-	once.Do(func() {
-		// Making the groups for groupcache
-		// There will be one group for each language
-		for _, scheme := range schemeDetails {
-			group := groupcache.GetGroup(scheme.Identifier)
-			if group == nil {
-				// 100MB max size for cache
-				group = groupcache.NewGroup(scheme.Identifier, 100<<20, groupcache.GetterFunc(fillCache))
-			}
-			cacheGroups[scheme.Identifier] = group
-		}
-	})
+// 	once.Do(func() {
+// 		// Making the groups for groupcache
+// 		// There will be one group for each language
+// 		for _, scheme := range schemeDetails {
+// 			group := groupcache.GetGroup(scheme.Identifier)
+// 			if group == nil {
+// 				// 100MB max size for cache
+// 				group = groupcache.NewGroup(scheme.Identifier, 100<<20, groupcache.GetterFunc(fillCache))
+// 			}
+// 			cacheGroups[scheme.Identifier] = group
+// 		}
+// 	})
 
-	cacheGroup := cacheGroups[langCode]
-	ctx := varnamCacheContext{}
+// 	cacheGroup := cacheGroups[langCode]
+// 	ctx := varnamCacheContext{}
 
-	var data []byte
-	if err := cacheGroup.Get(&ctx, fmt.Sprintf("%s+%d", langCode, start), groupcache.AllocatingByteSliceSink(&data)); err != nil {
-		if err == errCacheSkipped {
-			c.Response().Header().Set("Content-Encoding", "gzip")
-			return c.Blob(http.StatusOK, "application/json; charset=utf-8", ctx.Data)
-		}
+// 	var data []byte
+// 	if err := cacheGroup.Get(&ctx, fmt.Sprintf("%s+%d", langCode, start), groupcache.AllocatingByteSliceSink(&data)); err != nil {
+// 		if err == errCacheSkipped {
+// 			c.Response().Header().Set("Content-Encoding", "gzip")
+// 			return c.Blob(http.StatusOK, "application/json; charset=utf-8", ctx.Data)
+// 		}
 
-		app.log.Printf("error in fetching deta from cache: %s, err: %s", langCode, err.Error())
+// 		app.log.Printf("error in fetching deta from cache: %s, err: %s", langCode, err.Error())
 
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("error getting metadata. message: %s", err.Error()))
-	}
+// 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("error getting metadata. message: %s", err.Error()))
+// 	}
 
-	c.Response().Header().Set("Content-Encoding", "gzip")
+// 	c.Response().Header().Set("Content-Encoding", "gzip")
 
-	return c.Blob(http.StatusOK, "application/json; charset=utf-8", data)
-}
+// 	return c.Blob(http.StatusOK, "application/json; charset=utf-8", data)
+// }
 
 func handleLanguages(c echo.Context) error {
 	return c.JSON(http.StatusOK, schemeDetails)

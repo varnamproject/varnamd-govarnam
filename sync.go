@@ -13,7 +13,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/varnamproject/varnamd/libvarnam"
+	"gitlab.com/subins2000/govarnam/govarnamgo"
 )
 
 type syncDispatcher struct {
@@ -71,33 +71,33 @@ func performSync() {
 func syncWordsFromUpstream() {
 	for langCode := range varnamdConfig.schemesToDownload {
 		log.Printf("Sync: %s\n", langCode)
-		syncWordsFromUpstreamFor(langCode)
+		// syncWordsFromUpstreamFor(langCode)
 	}
 }
 
-func syncWordsFromUpstreamFor(langCode string) {
-	corpusDetails, err := getCorpusDetails(langCode)
-	if err != nil {
-		log.Printf("Error getting corpus details for '%s'. %s\n", langCode, err.Error())
-		return
-	}
+// func syncWordsFromUpstreamFor(langCode string) {
+// 	corpusDetails, err := getCorpusDetails(langCode)
+// 	if err != nil {
+// 		log.Printf("Error getting corpus details for '%s'. %s\n", langCode, err.Error())
+// 		return
+// 	}
 
-	localFilesToLearn := make(chan string, 100)
-	downloadedFilesToLearn := make(chan string, 100)
-	done := make(chan bool)
+// 	localFilesToLearn := make(chan string, 100)
+// 	downloadedFilesToLearn := make(chan string, 100)
+// 	done := make(chan bool)
 
-	// adding files which are remaining to learn in the local learn queue
-	remainingFilesFromLastDownload := getFilesFromLearnQueue(langCode)
-	go addFilesFromLocalLearnQueue(langCode, remainingFilesFromLastDownload, localFilesToLearn)
-	go downloadAllWords(langCode, corpusDetails.WordsCount, downloadedFilesToLearn)
-	go func() {
-		learnAll(langCode, localFilesToLearn)
-		learnAll(langCode, downloadedFilesToLearn)
-		done <- true
-	}()
+// 	// adding files which are remaining to learn in the local learn queue
+// 	remainingFilesFromLastDownload := getFilesFromLearnQueue(langCode)
+// 	go addFilesFromLocalLearnQueue(langCode, remainingFilesFromLastDownload, localFilesToLearn)
+// 	go downloadAllWords(langCode, corpusDetails.WordsCount, downloadedFilesToLearn)
+// 	go func() {
+// 		learnAll(langCode, localFilesToLearn)
+// 		learnAll(langCode, downloadedFilesToLearn)
+// 		done <- true
+// 	}()
 
-	<-done
-}
+// 	<-done
+// }
 
 func addFilesFromLocalLearnQueue(langCode string, files []string, filesToLearn chan string) {
 	if files != nil {
@@ -146,13 +146,14 @@ func learnFromFile(langCode, fileToLearn string) {
 
 	log.Printf("Learning from %s\n", fileToLearn)
 
-	_, _ = getOrCreateHandler(langCode, func(handle *libvarnam.Varnam) (data interface{}, err error) {
-		learnStatus, err := handle.LearnFromFile(fileToLearn)
+	_, _ = getOrCreateHandler(langCode, func(handle *govarnamgo.VarnamHandle) (data interface{}, err error) {
+		learnStatus, verr := handle.LearnFromFile(fileToLearn)
+
 		end := time.Now()
-		if err != nil {
-			log.Printf("Error learning from '%s'\n", err.Error())
+		if verr != nil {
+			log.Printf("Error learning from '%s'\n", verr.Error())
 		} else {
-			log.Printf("Learned from '%s'. TotalWords: %d, Failed: %d. Took %s\n", fileToLearn, learnStatus.TotalWords, learnStatus.Failed, end.Sub(start))
+			log.Printf("Learned from '%s'. Total Words: %d. Failed Words: %d Took %s\n", fileToLearn, learnStatus.TotalWords, learnStatus.FailedWords, end.Sub(start))
 		}
 
 		if err = os.Remove(fileToLearn); err != nil {
@@ -178,20 +179,20 @@ func downloadWordsAndUpdateOffset(langCode string, offset int) (string, error) {
 	return filePath, nil
 }
 
-func getCorpusDetails(langCode string) (*libvarnam.CorpusDetails, error) {
-	var m metaResponse
+// func getCorpusDetails(langCode string) (*libvarnam.CorpusDetails, error) {
+// 	var m metaResponse
 
-	url := fmt.Sprintf("%s/meta/%s", varnamdConfig.upstream, langCode)
-	log.Printf("Fetching corpus details for '%s'\n", langCode)
+// 	url := fmt.Sprintf("%s/meta/%s", varnamdConfig.upstream, langCode)
+// 	log.Printf("Fetching corpus details for '%s'\n", langCode)
 
-	if err := getJSONResponse(url, &m); err != nil {
-		return nil, err
-	}
+// 	if err := getJSONResponse(url, &m); err != nil {
+// 		return nil, err
+// 	}
 
-	log.Printf("Corpus size: %d\n", m.Result.WordsCount)
+// 	log.Printf("Corpus size: %d\n", m.Result.WordsCount)
 
-	return m.Result, nil
-}
+// 	return m.Result, nil
+// }
 
 // Downloads words from upstream starting from the specified offset and stores it locally in the learn queue
 // Returns the number of words downloaded, local file path and error if any

@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/labstack/echo/v4"
-	"github.com/varnamproject/varnamd/libvarnam"
+	"gitlab.com/subins2000/govarnam/govarnamgo"
 )
 
 const defaultChanSize = 1000
@@ -27,7 +27,7 @@ func (app *App) initChannels() {
 		learnChannels[scheme.Identifier] = make(chan string, defaultChanSize)
 		trainChannel[scheme.Identifier] = make(chan trainArgs, defaultChanSize)
 
-		handle, err := libvarnam.Init(scheme.Identifier)
+		handle, err := govarnamgo.InitFromID(scheme.Identifier)
 		if err != nil {
 			app.log.Fatal("Unable to initialize varnam for lang", scheme.LangCode)
 		}
@@ -36,11 +36,11 @@ func (app *App) initChannels() {
 	}
 }
 
-func (app *App) listenForWords(lang string, handle *libvarnam.Varnam) {
+func (app *App) listenForWords(lang string, handle *govarnamgo.VarnamHandle) {
 	for {
 		select {
 		case word := <-learnChannels[lang]:
-			if err := handle.Learn(strings.TrimSpace(word)); err != nil {
+			if err := handle.Learn(strings.TrimSpace(word), 0); err != nil {
 				app.log.Printf("Failed to learn %s. %s\n", word, err.Error())
 			}
 		case args := <-trainChannel[lang]:
@@ -63,14 +63,14 @@ func learnWordsFromFile(c echo.Context, langCode string, fileToLearn string, rem
 
 	sendOutput(fmt.Sprintf("Learning from %s\n", fileToLearn))
 
-	_, _ = getOrCreateHandler(langCode, func(handle *libvarnam.Varnam) (data interface{}, err error) {
-		learnStatus, err := handle.LearnFromFile(fileToLearn)
+	_, _ = getOrCreateHandler(langCode, func(handle *govarnamgo.VarnamHandle) (data interface{}, err error) {
+		learnStatus, verr := handle.LearnFromFile(fileToLearn)
 		end := time.Now()
 
-		if err != nil {
-			sendOutput(fmt.Sprintf("Error learning from '%s'\n", err.Error()))
+		if verr != nil {
+			sendOutput(fmt.Sprintf("Error learning: '%s'\n", verr.Error()))
 		} else {
-			sendOutput(fmt.Sprintf("Learned from '%s'. TotalWords: %d, Failed: %d. Took %s\n", fileToLearn, learnStatus.TotalWords, learnStatus.Failed, end.Sub(start)))
+			sendOutput(fmt.Sprintf("Finished Learning. TotalWords: %d, Failed: %d. Took %s\n", learnStatus.TotalWords, learnStatus.FailedWords, end.Sub(start)))
 		}
 
 		if removeFile {
@@ -83,7 +83,7 @@ func learnWordsFromFile(c echo.Context, langCode string, fileToLearn string, rem
 	})
 }
 
-func importLearningsFromFile(c echo.Context, langCode string, fileToLearn string, removeFile bool) error {
+func importLearningsFromFile(c echo.Context, langCode string, fileToImport string, removeFile bool) error {
 	c.Response().WriteHeader(http.StatusOK)
 
 	start := time.Now()
@@ -93,12 +93,12 @@ func importLearningsFromFile(c echo.Context, langCode string, fileToLearn string
 		c.Response().Flush()
 	}
 
-	sendOutput(fmt.Sprintf("Importing from %s\n", fileToLearn))
+	sendOutput(fmt.Sprintf("Importing from %s\n", fileToImport))
 
 	var importError error
 
-	_, _ = getOrCreateHandler(langCode, func(handle *libvarnam.Varnam) (data interface{}, err error) {
-		err = handle.ImportFromFile(fileToLearn)
+	_, _ = getOrCreateHandler(langCode, func(handle *govarnamgo.VarnamHandle) (data interface{}, err error) {
+		err = handle.Import(fileToImport)
 		end := time.Now()
 
 		if err != nil {
@@ -108,8 +108,8 @@ func importLearningsFromFile(c echo.Context, langCode string, fileToLearn string
 		}
 
 		if removeFile {
-			if err = os.Remove(fileToLearn); err != nil {
-				sendOutput(fmt.Sprintf("Error deleting '%s'. %s\n", fileToLearn, err.Error()))
+			if err = os.Remove(fileToImport); err != nil {
+				sendOutput(fmt.Sprintf("Error deleting '%s'. %s\n", fileToImport, err.Error()))
 			}
 		}
 		return

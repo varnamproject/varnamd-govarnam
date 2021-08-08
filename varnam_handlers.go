@@ -1,7 +1,7 @@
 package main
 
 import (
-	"database/sql"
+	"context"
 	"errors"
 	"log"
 	"sync"
@@ -9,7 +9,7 @@ import (
 
 	"github.com/golang/groupcache"
 	_ "github.com/mattn/go-sqlite3"
-	"github.com/varnamproject/varnamd/libvarnam"
+	"gitlab.com/subins2000/govarnam/govarnamgo"
 )
 
 type word struct {
@@ -19,12 +19,12 @@ type word struct {
 }
 
 var (
-	languageChannels map[string]chan *libvarnam.Varnam
-	channelsCount    map[string]int
-	mutex            *sync.Mutex
-	once             sync.Once
-	schemeDetails    = libvarnam.GetAllSchemeDetails()
-	cacheGroups      = make(map[string]*groupcache.Group)
+	languageChannels    map[string]chan *govarnamgo.VarnamHandle
+	channelsCount       map[string]int
+	mutex               *sync.Mutex
+	once                sync.Once
+	schemeDetails, errB = govarnamgo.GetAllSchemeDetails()
+	cacheGroups         = make(map[string]*groupcache.Group)
 	// peers            = groupcache.NewHTTPPool("http://localhost")
 )
 
@@ -39,16 +39,16 @@ func isValidSchemeIdentifier(id string) bool {
 }
 
 func initLanguageChannels() {
-	languageChannels = make(map[string]chan *libvarnam.Varnam)
+	languageChannels = make(map[string]chan *govarnamgo.VarnamHandle)
 	channelsCount = make(map[string]int)
 	mutex = &sync.Mutex{}
 
 	for _, scheme := range schemeDetails {
-		languageChannels[scheme.Identifier] = make(chan *libvarnam.Varnam, maxHandleCount)
+		languageChannels[scheme.Identifier] = make(chan *govarnamgo.VarnamHandle, maxHandleCount)
 		channelsCount[scheme.Identifier] = maxHandleCount
 
 		for i := 0; i < maxHandleCount; i++ {
-			handle, err := libvarnam.Init(scheme.Identifier)
+			handle, err := govarnamgo.InitFromID(scheme.Identifier)
 			if err != nil {
 				panic("Unable to init varnam for language" + scheme.LangCode + ". " + err.Error())
 			}
@@ -58,7 +58,7 @@ func initLanguageChannels() {
 	}
 }
 
-func getOrCreateHandler(schemeIdentifier string, f func(handle *libvarnam.Varnam) (data interface{}, err error)) (data interface{}, err error) {
+func getOrCreateHandler(schemeIdentifier string, f func(handle *govarnamgo.VarnamHandle) (data interface{}, err error)) (data interface{}, err error) {
 	ch, ok := languageChannels[schemeIdentifier]
 	if !ok {
 		return nil, errors.New("invalid scheme identifier")
@@ -70,9 +70,9 @@ func getOrCreateHandler(schemeIdentifier string, f func(handle *libvarnam.Varnam
 
 		go func() { ch <- handle }()
 	case <-time.After(800 * time.Millisecond):
-		var handle *libvarnam.Varnam
+		var handle *govarnamgo.VarnamHandle
 
-		handle, err = libvarnam.Init(schemeIdentifier)
+		handle, err = govarnamgo.InitFromID(schemeIdentifier)
 		if err != nil {
 			log.Println(err)
 			return nil, errors.New("unable to initialize varnam handle")
@@ -90,9 +90,9 @@ func getOrCreateHandler(schemeIdentifier string, f func(handle *libvarnam.Varnam
 	return
 }
 
-func transliterate(schemeIdentifier string, word string) (interface{}, error) {
-	return getOrCreateHandler(schemeIdentifier, func(handle *libvarnam.Varnam) (data interface{}, err error) {
-		return handle.Transliterate(word)
+func transliterate(c context.Context, schemeIdentifier string, word string) (interface{}, error) {
+	return getOrCreateHandler(schemeIdentifier, func(handle *govarnamgo.VarnamHandle) (data interface{}, err error) {
+		return handle.Transliterate(c, word), nil
 	})
 }
 
@@ -102,67 +102,67 @@ func transliterate(schemeIdentifier string, word string) (interface{}, error) {
 // 	})
 // }
 
-func getWords(schemeIdentifier string, downloadStart int) ([]*word, error) {
-	filepath, _ := getOrCreateHandler(schemeIdentifier, func(handle *libvarnam.Varnam) (data interface{}, err error) {
-		return handle.GetSuggestionsFilePath(), nil
-	})
+// func getWords(schemeIdentifier string, downloadStart int) ([]*word, error) {
+// 	filepath, _ := getOrCreateHandler(schemeIdentifier, func(handle *libvarnam.Varnam) (data interface{}, err error) {
+// 		return handle.GetSuggestionsFilePath(), nil
+// 	})
 
-	db, err := sql.Open("sqlite3", filepath.(string))
-	if err != nil {
-		return nil, err
-	}
+// 	db, err := sql.Open("sqlite3", filepath.(string))
+// 	if err != nil {
+// 		return nil, err
+// 	}
 
-	defer func() { _ = db.Close() }()
+// 	defer func() { _ = db.Close() }()
 
-	// Making an index for all learned words so that download is faster
-	// this needs to be removed when there is more clarity on how learned words needs to be handled
-	if _, err = db.Exec("create index if not exists varnamd_download_only_learned on patterns_content (learned) where learned = 1;"); err != nil {
-		return nil, err
-	}
+// 	// Making an index for all learned words so that download is faster
+// 	// this needs to be removed when there is more clarity on how learned words needs to be handled
+// 	if _, err = db.Exec("create index if not exists varnamd_download_only_learned on patterns_content (learned) where learned = 1;"); err != nil {
+// 		return nil, err
+// 	}
 
-	q := `select id, word, confidence from words where id in (select distinct(word_id) from patterns_content where learned = 1) order by id asc limit ? offset ?;`
+// 	q := `select id, word, confidence from words where id in (select distinct(word_id) from patterns_content where learned = 1) order by id asc limit ? offset ?;`
 
-	rows, err := db.Query(q, downloadPageSize, downloadStart)
-	if err != nil {
-		return nil, err
-	}
+// 	rows, err := db.Query(q, downloadPageSize, downloadStart)
+// 	if err != nil {
+// 		return nil, err
+// 	}
 
-	if rows.Err() != nil {
-		return nil, rows.Err()
-	}
+// 	if rows.Err() != nil {
+// 		return nil, rows.Err()
+// 	}
 
-	defer func() { _ = rows.Close() }()
+// 	defer func() { _ = rows.Close() }()
 
-	var words []*word
+// 	var words []*word
 
-	for rows.Next() {
-		var (
-			id, confidence int
-			_word          string
-		)
+// 	for rows.Next() {
+// 		var (
+// 			id, confidence int
+// 			_word          string
+// 		)
 
-		_ = rows.Scan(&id, &_word, &confidence)
+// 		_ = rows.Scan(&id, &_word, &confidence)
 
-		words = append(words, &word{ID: id, Confidence: confidence, Word: _word})
-	}
+// 		words = append(words, &word{ID: id, Confidence: confidence, Word: _word})
+// 	}
 
-	return words, nil
-}
+// 	return words, nil
+// }
 
 func reveseTransliterate(schemeIdentifier string, word string) (interface{}, error) {
-	return getOrCreateHandler(schemeIdentifier, func(handle *libvarnam.Varnam) (data interface{}, err error) {
+	return getOrCreateHandler(schemeIdentifier, func(handle *govarnamgo.VarnamHandle) (data interface{}, err error) {
 		return handle.ReverseTransliterate(word)
 	})
 }
 
-func sendHandlerToChannel(schemeIdentifier string, handle *libvarnam.Varnam, ch chan *libvarnam.Varnam) {
+func sendHandlerToChannel(schemeIdentifier string, handle *govarnamgo.VarnamHandle, ch chan *govarnamgo.VarnamHandle) {
 	mutex.Lock()
 	count := channelsCount[schemeIdentifier]
 	mutex.Unlock()
 
 	if count == maxHandleCount {
 		log.Printf("Throw away handle")
-		handle.Destroy()
+		handle.Close()
 
 		return
 	}
@@ -178,13 +178,13 @@ func sendHandlerToChannel(schemeIdentifier string, handle *libvarnam.Varnam, ch 
 }
 
 func getSchemeFilePath(schemeIdentifier string) (interface{}, error) {
-	return getOrCreateHandler(schemeIdentifier, func(handle *libvarnam.Varnam) (data interface{}, err error) {
-		return handle.GetSchemeFilePath(), nil
+	return getOrCreateHandler(schemeIdentifier, func(handle *govarnamgo.VarnamHandle) (data interface{}, err error) {
+		return handle.GetVSTPath(), nil
 	})
 }
 
 func deleteWord(schemeIdentifier string, word string) (interface{}, error) {
-	return getOrCreateHandler(schemeIdentifier, func(handle *libvarnam.Varnam) (data interface{}, err error) {
-		return nil, handle.DeleteWord(word)
+	return getOrCreateHandler(schemeIdentifier, func(handle *govarnamgo.VarnamHandle) (data interface{}, err error) {
+		return nil, handle.Unlearn(word)
 	})
 }
