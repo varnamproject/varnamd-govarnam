@@ -290,6 +290,23 @@ func handleLanguageDownload(c echo.Context) error {
 	return c.Attachment(filepath.(string), langCode+".vst")
 }
 
+func handleSchemeDefinition(c echo.Context) error {
+	var (
+		schemeID = c.Param("schemeID")
+		// app      = c.Get("app").(*App)
+	)
+
+	// do caching
+
+	result, err := getLanguageSchemeDefinitions(c.Request().Context(), schemeID)
+
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
+	}
+
+	return c.JSON(http.StatusOK, schemeDefinition{standardResponse: newStandardResponse(), Result: result})
+}
+
 func handleLearn(c echo.Context) error {
 	var (
 		a args

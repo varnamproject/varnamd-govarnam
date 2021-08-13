@@ -188,3 +188,9 @@ func deleteWord(schemeIdentifier string, word string) (interface{}, error) {
 		return nil, handle.Unlearn(word)
 	})
 }
+
+func searchSymbolTable(ctx context.Context, schemeIdentifier string, searchCondition govarnamgo.Symbol) (interface{}, error) {
+	return getOrCreateHandler(schemeIdentifier, func(handle *govarnamgo.VarnamHandle) (data interface{}, err error) {
+		return handle.SearchSymbolTable(ctx, searchCondition), err
+	})
+}
