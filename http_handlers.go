@@ -290,6 +290,19 @@ func handleLanguageDownload(c echo.Context) error {
 	return c.Attachment(filepath.(string), langCode+".vst")
 }
 
+func handleSchemeInfo(c echo.Context) error {
+	var (
+		schemeID = c.Param("schemeID")
+	)
+
+	sd, err := getSchemeDetails(schemeID)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
+	}
+
+	return c.JSON(http.StatusOK, sd)
+}
+
 func handleSchemeDefinition(c echo.Context) error {
 	var (
 		schemeID = c.Param("schemeID")
@@ -298,13 +311,18 @@ func handleSchemeDefinition(c echo.Context) error {
 
 	// do caching
 
-	result, err := getLanguageSchemeDefinitions(c.Request().Context(), schemeID)
+	sd, err := getSchemeDetails(schemeID)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
+	}
+
+	result, err := getLanguageSchemeDefinitions(c.Request().Context(), sd)
 
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
 
-	return c.JSON(http.StatusOK, schemeDefinition{standardResponse: newStandardResponse(), Result: result})
+	return c.JSON(http.StatusOK, schemeDefinition{standardResponse: newStandardResponse(), Details: sd, Def: result})
 }
 
 func handleLearn(c echo.Context) error {

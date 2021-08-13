@@ -8,18 +8,17 @@ import (
 )
 
 type schemeDefinitionItem struct {
-	Exact       []string `json:"exact"`
-	Possibility []string `json:"possibility"`
+	Exact       []string
+	Possibility []string
 }
 
 type schemeDefinition struct {
 	standardResponse
-	Result []map[string]schemeDefinitionItem `json:"result"`
+	Details govarnamgo.SchemeDetails
+	Def     []map[string]schemeDefinitionItem
 }
 
-func getLanguageSchemeDefinitions(ctx context.Context, schemeID string) ([]map[string]schemeDefinitionItem, error) {
-	var result []map[string]schemeDefinitionItem
-
+func getSchemeDetails(schemeID string) (govarnamgo.SchemeDetails, error) {
 	var schemeInfo govarnamgo.SchemeDetails
 	foundScheme := false
 	for _, sd := range schemeDetails {
@@ -30,8 +29,16 @@ func getLanguageSchemeDefinitions(ctx context.Context, schemeID string) ([]map[s
 	}
 
 	if !foundScheme {
-		return nil, fmt.Errorf("invalid scheme id")
+		return schemeInfo, fmt.Errorf("invalid scheme id")
 	}
+
+	return schemeInfo, nil
+}
+
+func getLanguageSchemeDefinitions(ctx context.Context, sd govarnamgo.SchemeDetails) ([]map[string]schemeDefinitionItem, error) {
+	var result []map[string]schemeDefinitionItem
+
+	schemeID := sd.Identifier
 
 	// Vowels
 	var symbol govarnamgo.Symbol
@@ -66,7 +73,7 @@ func getLanguageSchemeDefinitions(ctx context.Context, schemeID string) ([]map[s
 	}
 
 	// Consonants
-	if schemeInfo.LangCode == "ml" {
+	if sd.LangCode == "ml" {
 		result = append(result, getMLNonVowels(ctx)...)
 	}
 
