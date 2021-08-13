@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"sort"
 
 	"gitlab.com/subins2000/govarnam/govarnamgo"
 )
@@ -74,18 +75,26 @@ func getLanguageSchemeDefinitions(ctx context.Context, sd govarnamgo.SchemeDetai
 		}
 	}
 
+	// For sorting map
+	keys := make([]string, 0, len(items))
+	for k := range items {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+
 	var categorizedResult []schemeDefinitionItem
 
-	for letter, r := range items {
+	for _, letter := range keys {
+		item := items[letter]
 		categorizedResult = append(categorizedResult, schemeDefinitionItem{
 			Letter:      letter,
 			Category:    searchResults[0].Value1, // അ
-			Exact:       r.Exact,
-			Possibility: r.Possibility,
+			Exact:       item.Exact,
+			Possibility: item.Possibility,
 		})
 	}
 
-	// letters
+	// consonants
 	if sd.LangCode == "ml" {
 		categorizedResult = append(categorizedResult, getMLConsonants(ctx)...)
 	}
