@@ -7,12 +7,12 @@ import (
 	"gitlab.com/subins2000/govarnam/govarnamgo"
 )
 
-type schemeDefinitionSimpleItem struct {
+type matches struct {
 	Exact       []string
 	Possibility []string
 }
 
-type schemeDefinitionCategorizedItem struct {
+type schemeDefinitionItem struct {
 	Letter      string
 	Category    string
 	Exact       []string
@@ -22,7 +22,7 @@ type schemeDefinitionCategorizedItem struct {
 type schemeDefinition struct {
 	standardResponse
 	Details     govarnamgo.SchemeDetails
-	Definitions []schemeDefinitionCategorizedItem
+	Definitions []schemeDefinitionItem
 }
 
 func getSchemeDetails(schemeID string) (govarnamgo.SchemeDetails, error) {
@@ -42,9 +42,7 @@ func getSchemeDetails(schemeID string) (govarnamgo.SchemeDetails, error) {
 	return schemeInfo, nil
 }
 
-func getLanguageSchemeDefinitions(ctx context.Context, sd govarnamgo.SchemeDetails) ([]schemeDefinitionCategorizedItem, error) {
-	var result []map[string]schemeDefinitionSimpleItem
-
+func getLanguageSchemeDefinitions(ctx context.Context, sd govarnamgo.SchemeDetails) ([]schemeDefinitionItem, error) {
 	schemeID := sd.Identifier
 
 	// Vowels
@@ -54,89 +52,73 @@ func getLanguageSchemeDefinitions(ctx context.Context, sd govarnamgo.SchemeDetai
 	searchResultsI, _ := searchSymbolTable(ctx, schemeID, symbol)
 	searchResults := searchResultsI.([]govarnamgo.Symbol)
 
-	if len(searchResults) > 0 {
-		items := make(map[string]schemeDefinitionSimpleItem)
-		for _, r := range searchResults {
-			exact := []string{}
-			possibility := []string{}
+	items := make(map[string]matches)
 
-			if r.MatchType == 1 {
-				exact = []string{r.Pattern}
-			} else {
-				possibility = []string{r.Pattern}
-			}
+	for _, r := range searchResults {
+		exact := []string{}
+		possibility := []string{}
 
-			item, ok := items[r.Value1]
-			if ok {
-				item.Exact = append(item.Exact, exact...)
-				item.Possibility = append(item.Possibility, possibility...)
-				items[r.Value1] = item
-			} else {
-				items[r.Value1] = schemeDefinitionSimpleItem{exact, possibility}
-			}
+		if r.MatchType == 1 {
+			exact = []string{r.Pattern}
+		} else {
+			possibility = []string{r.Pattern}
 		}
 
-		result = append(result, items)
+		item, ok := items[r.Value1]
+		if ok {
+			item.Exact = append(item.Exact, exact...)
+			item.Possibility = append(item.Possibility, possibility...)
+			items[r.Value1] = item
+		} else {
+			items[r.Value1] = matches{exact, possibility}
+		}
 	}
 
-	// Consonants
+	var categorizedResult []schemeDefinitionItem
+
+	for letter, r := range items {
+		categorizedResult = append(categorizedResult, schemeDefinitionItem{
+			Letter:      letter,
+			Category:    searchResults[0].Value1, // അ
+			Exact:       r.Exact,
+			Possibility: r.Possibility,
+		})
+	}
+
+	// letters
 	if sd.LangCode == "ml" {
-		result = append(result, getMLNonVowels(ctx)...)
-	}
-
-	var categorizedResult []schemeDefinitionCategorizedItem
-
-	for _, set := range result {
-		c := ""
-		for letter, r := range set {
-			if c == "" {
-				c = letter
-			}
-
-			categorizedResult = append(categorizedResult, schemeDefinitionCategorizedItem{
-				Letter:      letter,
-				Category:    c,
-				Exact:       r.Exact,
-				Possibility: r.Possibility,
-			})
-		}
+		categorizedResult = append(categorizedResult, getMLConsonants(ctx)...)
 	}
 
 	return categorizedResult, nil
 }
 
-func getMLNonVowels(ctx context.Context) []map[string]schemeDefinitionSimpleItem {
-	letterSets := [][]string{
-		[]string{"ക", "ഖ", "ഗ", "ഘ", "ങ"},
-		[]string{"ച", "ഛ", "ജ", "ഝ", "ഞ"},
-		[]string{"ട", "ഠ", "ഡ", "ഢ", "ണ"},
-		[]string{"ത", "ഥ", "ദ", "ധ", "ന", "ഩ"},
-		[]string{"പ", "ഫ", "ബ", "ഭ", "മ"},
-		[]string{"യ", "ര", "ല", "വ", "ശ", "ഷ", "സ", "ഹ", "ള", "ഴ", "റ"},
-		[]string{"ൺ", "ൻ", "ർ", "ൽ", "ൾ", "ൿ"},
+func getMLConsonants(ctx context.Context) []schemeDefinitionItem {
+	letterSets := map[string][]string{
+		"ക":          []string{"ക", "ഖ", "ഗ", "ഘ", "ങ"},
+		"ച":          []string{"ച", "ഛ", "ജ", "ഝ", "ഞ"},
+		"ട":          []string{"ട", "ഠ", "ഡ", "ഢ", "ണ"},
+		"ത":          []string{"ത", "ഥ", "ദ", "ധ", "ന", "ഩ"},
+		"പ":          []string{"പ", "ഫ", "ബ", "ഭ", "മ"},
+		"യ":          []string{"ര", "ല", "വ", "ശ", "ഷ", "സ", "ഹ", "ള", "ഴ", "റ"},
+		"ചില്ലക്ഷരം": []string{"ൺ", "ൻ", "ർ", "ൽ", "ൾ", "ൿ"},
 	}
 
 	// 7 sets of letters
 	const numberOfSets = 7
 
-	items := make([]map[string]schemeDefinitionSimpleItem, numberOfSets)
-
-	i := 0
-	for i < numberOfSets {
-		items[i] = make(map[string]schemeDefinitionSimpleItem)
-		i++
-	}
+	items := make(map[string]matches, numberOfSets)
 
 	var symbol govarnamgo.Symbol
-	symbol.Type = 2 // Consonant
+	symbol.Type = 2 // consonant
 	searchResultsI, _ := searchSymbolTable(ctx, "ml", symbol)
 	searchResults := searchResultsI.([]govarnamgo.Symbol)
 
 	if len(searchResults) > 0 {
 		for _, r := range searchResults {
-			for i, consonantSet := range letterSets {
-				for _, consonant := range consonantSet {
-					if r.Value1 == consonant {
+			for _, letterSet := range letterSets {
+				for _, letter := range letterSet {
+					if r.Value1 == letter {
 						exact := []string{}
 						possibility := []string{}
 
@@ -146,13 +128,13 @@ func getMLNonVowels(ctx context.Context) []map[string]schemeDefinitionSimpleItem
 							possibility = []string{r.Pattern}
 						}
 
-						item, ok := items[i][r.Value1]
+						item, ok := items[r.Value1]
 						if ok {
 							item.Exact = append(item.Exact, exact...)
 							item.Possibility = append(item.Possibility, possibility...)
-							items[i][r.Value1] = item
+							items[r.Value1] = item
 						} else {
-							items[i][r.Value1] = schemeDefinitionSimpleItem{exact, possibility}
+							items[r.Value1] = matches{exact, possibility}
 						}
 					}
 				}
@@ -160,5 +142,17 @@ func getMLNonVowels(ctx context.Context) []map[string]schemeDefinitionSimpleItem
 		}
 	}
 
-	return items
+	var categorizedResult []schemeDefinitionItem
+	for category, letterSet := range letterSets {
+		for _, letter := range letterSet {
+			categorizedResult = append(categorizedResult, schemeDefinitionItem{
+				Letter:      letter,
+				Category:    category,
+				Exact:       items[letter].Exact,
+				Possibility: items[letter].Possibility,
+			})
+		}
+	}
+
+	return categorizedResult
 }
