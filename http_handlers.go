@@ -322,7 +322,7 @@ func handleSchemeDefinition(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
 
-	return c.JSON(http.StatusOK, schemeDefinition{standardResponse: newStandardResponse(), Details: sd, Def: result})
+	return c.JSON(http.StatusOK, schemeDefinition{standardResponse: newStandardResponse(), Details: sd, Definitions: result})
 }
 
 func handleLearn(c echo.Context) error {

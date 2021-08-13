@@ -44,7 +44,7 @@ func initHandlers(app *App, enableInternalApis bool) *echo.Echo {
 	e.GET("/status", handleStatus)
 
 	e.GET("/schemes/:schemeID", handleSchemeInfo)
-	e.GET("/schemes/:schemeID/def", handleSchemeDefinition)
+	e.GET("/schemes/:schemeID/definitions", handleSchemeDefinition)
 
 	e.GET("/", handleIndex)
 

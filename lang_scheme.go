@@ -7,15 +7,22 @@ import (
 	"gitlab.com/subins2000/govarnam/govarnamgo"
 )
 
-type schemeDefinitionItem struct {
+type schemeDefinitionSimpleItem struct {
+	Exact       []string
+	Possibility []string
+}
+
+type schemeDefinitionCategorizedItem struct {
+	Letter      string
+	Category    string
 	Exact       []string
 	Possibility []string
 }
 
 type schemeDefinition struct {
 	standardResponse
-	Details govarnamgo.SchemeDetails
-	Def     []map[string]schemeDefinitionItem
+	Details     govarnamgo.SchemeDetails
+	Definitions []schemeDefinitionCategorizedItem
 }
 
 func getSchemeDetails(schemeID string) (govarnamgo.SchemeDetails, error) {
@@ -35,8 +42,8 @@ func getSchemeDetails(schemeID string) (govarnamgo.SchemeDetails, error) {
 	return schemeInfo, nil
 }
 
-func getLanguageSchemeDefinitions(ctx context.Context, sd govarnamgo.SchemeDetails) ([]map[string]schemeDefinitionItem, error) {
-	var result []map[string]schemeDefinitionItem
+func getLanguageSchemeDefinitions(ctx context.Context, sd govarnamgo.SchemeDetails) ([]schemeDefinitionCategorizedItem, error) {
+	var result []map[string]schemeDefinitionSimpleItem
 
 	schemeID := sd.Identifier
 
@@ -48,7 +55,7 @@ func getLanguageSchemeDefinitions(ctx context.Context, sd govarnamgo.SchemeDetai
 	searchResults := searchResultsI.([]govarnamgo.Symbol)
 
 	if len(searchResults) > 0 {
-		items := make(map[string]schemeDefinitionItem)
+		items := make(map[string]schemeDefinitionSimpleItem)
 		for _, r := range searchResults {
 			exact := []string{}
 			possibility := []string{}
@@ -65,7 +72,7 @@ func getLanguageSchemeDefinitions(ctx context.Context, sd govarnamgo.SchemeDetai
 				item.Possibility = append(item.Possibility, possibility...)
 				items[r.Value1] = item
 			} else {
-				items[r.Value1] = schemeDefinitionItem{exact, possibility}
+				items[r.Value1] = schemeDefinitionSimpleItem{exact, possibility}
 			}
 		}
 
@@ -77,10 +84,28 @@ func getLanguageSchemeDefinitions(ctx context.Context, sd govarnamgo.SchemeDetai
 		result = append(result, getMLNonVowels(ctx)...)
 	}
 
-	return result, nil
+	var categorizedResult []schemeDefinitionCategorizedItem
+
+	for _, set := range result {
+		c := ""
+		for letter, r := range set {
+			if c == "" {
+				c = letter
+			}
+
+			categorizedResult = append(categorizedResult, schemeDefinitionCategorizedItem{
+				Letter:      letter,
+				Category:    c,
+				Exact:       r.Exact,
+				Possibility: r.Possibility,
+			})
+		}
+	}
+
+	return categorizedResult, nil
 }
 
-func getMLNonVowels(ctx context.Context) []map[string]schemeDefinitionItem {
+func getMLNonVowels(ctx context.Context) []map[string]schemeDefinitionSimpleItem {
 	letterSets := [][]string{
 		[]string{"ക", "ഖ", "ഗ", "ഘ", "ങ"},
 		[]string{"ച", "ഛ", "ജ", "ഝ", "ഞ"},
@@ -94,11 +119,11 @@ func getMLNonVowels(ctx context.Context) []map[string]schemeDefinitionItem {
 	// 7 sets of letters
 	const numberOfSets = 7
 
-	items := make([]map[string]schemeDefinitionItem, numberOfSets)
+	items := make([]map[string]schemeDefinitionSimpleItem, numberOfSets)
 
 	i := 0
 	for i < numberOfSets {
-		items[i] = make(map[string]schemeDefinitionItem)
+		items[i] = make(map[string]schemeDefinitionSimpleItem)
 		i++
 	}
 
@@ -127,7 +152,7 @@ func getMLNonVowels(ctx context.Context) []map[string]schemeDefinitionItem {
 							item.Possibility = append(item.Possibility, possibility...)
 							items[i][r.Value1] = item
 						} else {
-							items[i][r.Value1] = schemeDefinitionItem{exact, possibility}
+							items[i][r.Value1] = schemeDefinitionSimpleItem{exact, possibility}
 						}
 					}
 				}
