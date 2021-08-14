@@ -9,6 +9,7 @@
     #download-enabled-schemes    = "ml,ml-inscript"
     sync-interval               = "5s"
     accounts-enabled            = false
+    address = "127.0.0.1:8123"
 [users]
     [users.admin]
         password = "pass"
