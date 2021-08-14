@@ -102,7 +102,7 @@ func getSchemeDefinitions(ctx context.Context, sd govarnamgo.SchemeDetails) ([]s
 
 	// consonants
 	if sd.LangCode == "ml" {
-		categorizedResult = append(categorizedResult, getMLConsonants(ctx)...)
+		categorizedResult = append(categorizedResult, getMLConsonants(ctx, sd)...)
 	}
 
 	// zwj, virama, other characters
@@ -111,7 +111,7 @@ func getSchemeDefinitions(ctx context.Context, sd govarnamgo.SchemeDetails) ([]s
 	return categorizedResult, nil
 }
 
-func getMLConsonants(ctx context.Context) []schemeDefinitionItem {
+func getMLConsonants(ctx context.Context, sd govarnamgo.SchemeDetails) []schemeDefinitionItem {
 	letterSets := map[string][]string{
 		"ക":          []string{"ക", "ഖ", "ഗ", "ഘ", "ങ"},
 		"ച":          []string{"ച", "ഛ", "ജ", "ഝ", "ഞ"},
@@ -126,7 +126,7 @@ func getMLConsonants(ctx context.Context) []schemeDefinitionItem {
 
 	var symbol govarnamgo.Symbol
 	symbol.Type = 2 // consonant
-	searchResultsI, _ := searchSymbolTable(ctx, "ml", symbol)
+	searchResultsI, _ := searchSymbolTable(ctx, sd.Identifier, symbol)
 	searchResults := searchResultsI.([]govarnamgo.Symbol)
 
 	for _, r := range searchResults {
