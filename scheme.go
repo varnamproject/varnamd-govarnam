@@ -43,7 +43,7 @@ func getSchemeDetails(schemeID string) (govarnamgo.SchemeDetails, error) {
 	return schemeInfo, nil
 }
 
-func getLanguageSchemeDefinitions(ctx context.Context, sd govarnamgo.SchemeDetails) ([]schemeDefinitionItem, error) {
+func getSchemeDefinitions(ctx context.Context, sd govarnamgo.SchemeDetails) ([]schemeDefinitionItem, error) {
 	schemeID := sd.Identifier
 
 	// Vowels
@@ -113,38 +113,33 @@ func getMLConsonants(ctx context.Context) []schemeDefinitionItem {
 		"ചില്ലക്ഷരം": []string{"ൻ", "ർ", "ൽ", "ൾ", "ൺ", "ൿ"},
 	}
 
-	// 7 sets of letters
-	const numberOfSets = 7
-
-	items := make(map[string]matches, numberOfSets)
+	items := make(map[string]matches)
 
 	var symbol govarnamgo.Symbol
 	symbol.Type = 2 // consonant
 	searchResultsI, _ := searchSymbolTable(ctx, "ml", symbol)
 	searchResults := searchResultsI.([]govarnamgo.Symbol)
 
-	if len(searchResults) > 0 {
-		for _, r := range searchResults {
-			for _, letterSet := range letterSets {
-				for _, letter := range letterSet {
-					if r.Value1 == letter {
-						exact := []string{}
-						possibility := []string{}
+	for _, r := range searchResults {
+		for _, letterSet := range letterSets {
+			for _, letter := range letterSet {
+				if r.Value1 == letter {
+					exact := []string{}
+					possibility := []string{}
 
-						if r.MatchType == 1 {
-							exact = []string{r.Pattern}
-						} else {
-							possibility = []string{r.Pattern}
-						}
+					if r.MatchType == 1 {
+						exact = []string{r.Pattern}
+					} else {
+						possibility = []string{r.Pattern}
+					}
 
-						item, ok := items[r.Value1]
-						if ok {
-							item.Exact = append(item.Exact, exact...)
-							item.Possibility = append(item.Possibility, possibility...)
-							items[r.Value1] = item
-						} else {
-							items[r.Value1] = matches{exact, possibility}
-						}
+					item, ok := items[r.Value1]
+					if ok {
+						item.Exact = append(item.Exact, exact...)
+						item.Possibility = append(item.Possibility, possibility...)
+						items[r.Value1] = item
+					} else {
+						items[r.Value1] = matches{exact, possibility}
 					}
 				}
 			}
@@ -164,4 +159,51 @@ func getMLConsonants(ctx context.Context) []schemeDefinitionItem {
 	}
 
 	return categorizedResult
+}
+
+func getSchemeLetterDefinitions(ctx context.Context, sd govarnamgo.SchemeDetails, letter string) ([]schemeDefinitionItem, error) {
+	items := make(map[string]matches)
+
+	var symbol govarnamgo.Symbol
+	symbol.Value1 = "LIKE " + letter + "%"
+	searchResultsI, _ := searchSymbolTable(ctx, sd.Identifier, symbol)
+	searchResults := searchResultsI.([]govarnamgo.Symbol)
+
+	for _, r := range searchResults {
+		exact := []string{}
+		possibility := []string{}
+
+		if r.MatchType == 1 {
+			exact = []string{r.Pattern}
+		} else {
+			possibility = []string{r.Pattern}
+		}
+
+		item, ok := items[r.Value1]
+		if ok {
+			item.Exact = append(item.Exact, exact...)
+			item.Possibility = append(item.Possibility, possibility...)
+			items[r.Value1] = item
+		} else {
+			items[r.Value1] = matches{exact, possibility}
+		}
+	}
+
+	var categorizedResult []schemeDefinitionItem
+	for letterCombo, item := range items {
+		letterComboRunes := []rune(letterCombo)
+		category := letter
+		if len(letterComboRunes) > 2 {
+			category = string(letterComboRunes[2])
+		}
+
+		categorizedResult = append(categorizedResult, schemeDefinitionItem{
+			Letter:      letterCombo,
+			Category:    category,
+			Exact:       item.Exact,
+			Possibility: item.Possibility,
+		})
+	}
+
+	return categorizedResult, nil
 }
