@@ -303,7 +303,7 @@ func handleSchemeInfo(c echo.Context) error {
 	return c.JSON(http.StatusOK, sd)
 }
 
-func handleSchemeDefinition(c echo.Context) error {
+func handleSchemeDefinitions(c echo.Context) error {
 	var (
 		schemeID = c.Param("schemeID")
 		// app      = c.Get("app").(*App)
