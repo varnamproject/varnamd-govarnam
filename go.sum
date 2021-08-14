@@ -54,6 +54,8 @@ github.com/mattn/go-sqlite3 v1.14.0 h1:mLyGNKR8+Vv9CAU7PphKa2hkEqxxhn8i32J6FPj1/
 github.com/mattn/go-sqlite3 v1.14.0/go.mod h1:JIl7NbARA7phWnGvh0LKTyg7S9BA+6gx71ShQilpsus=
 github.com/mattn/go-sqlite3 v1.14.6 h1:dNPt6NO46WmLVt2DLNpwczCmdV5boIZ6g/tlDrlRUbg=
 github.com/mattn/go-sqlite3 v1.14.6/go.mod h1:NyWgC/yNuGj7Q9rpYnZvas74GogHl5/Z4A/KQRfk6bU=
+github.com/mattn/go-sqlite3 v1.14.8 h1:gDp86IdQsN/xWjIEmr9MF6o9mpksUgh0fu+9ByFxzIU=
+github.com/mattn/go-sqlite3 v1.14.8/go.mod h1:NyWgC/yNuGj7Q9rpYnZvas74GogHl5/Z4A/KQRfk6bU=
 github.com/mitchellh/mapstructure v1.2.2 h1:dxe5oCinTXiTIcfgmZecdCzPmAJKd46KsCWc35r0TV4=
 github.com/mitchellh/mapstructure v1.2.2/go.mod h1:bFUtVrKA4DC2yAKiSyO/QUcy7e+RRV2QTWOzhPopBRo=
 github.com/pelletier/go-toml v1.7.0 h1:7utD74fnzVc/cpcyy8sjrlFr5vYpypUixARcHIMIGuI=
@@ -81,6 +83,8 @@ gitlab.com/subins2000/govarnam v1.2.1-0.20210812195243-09e817dc87df h1:Oj+N+osoj
 gitlab.com/subins2000/govarnam v1.2.1-0.20210812195243-09e817dc87df/go.mod h1:R19+5ay/L3I3xSXBvjhW+YmrY/+iAIbvNWtCmC+qryM=
 gitlab.com/subins2000/govarnam v1.2.1-0.20210812210540-d5f8e7f80159 h1:nI1KeuR2QfLZ5hqc/mhrwK4TZ0VXQsRxAeytLsVt9ec=
 gitlab.com/subins2000/govarnam v1.2.1-0.20210812210540-d5f8e7f80159/go.mod h1:R19+5ay/L3I3xSXBvjhW+YmrY/+iAIbvNWtCmC+qryM=
+gitlab.com/subins2000/govarnam v1.3.1-0.20210814114908-4e91d032e34b h1:R+ta18Ic6CpIKR1HFZVPdi0E791fSsJaDmxhP/88fJQ=
+gitlab.com/subins2000/govarnam v1.3.1-0.20210814114908-4e91d032e34b/go.mod h1:R19+5ay/L3I3xSXBvjhW+YmrY/+iAIbvNWtCmC+qryM=
 golang.org/x/crypto v0.0.0-20190308221718-c2843e01d9a2 h1:VklqNMn3ovrHsnt90PveolxSbWFaJdECFbxSq0Mqo2M=
 golang.org/x/crypto v0.0.0-20190308221718-c2843e01d9a2/go.mod h1:djNgcEr1/C05ACkg1iLfiJU5Ep61QUkGW8qpdssI0+w=
 golang.org/x/crypto v0.0.0-20200221231518-2aa609cf4a9d/go.mod h1:LzIPMQfyMNhhGPhUkYOs5KpL4U8rLKemX1yGLhDgUto=
