@@ -43,6 +43,10 @@ func initHandlers(app *App, enableInternalApis bool) *echo.Echo {
 	e.GET("/packs/:langCode/:packIdentifier/:packVersionIdentifier/download", handlePacksDownload)
 	e.GET("/status", handleStatus)
 
+	e.GET("/schemes/:schemeID", handleSchemeInfo)
+	e.GET("/schemes/:schemeID/definitions", handleSchemeDefinitions)
+	e.GET("/schemes/:schemeID/definitions/:letter", handleSchemeLetterDefinitions)
+
 	e.GET("/", handleIndex)
 
 	e.GET("/*", echo.WrapHandler(app.fs.FileServer()))

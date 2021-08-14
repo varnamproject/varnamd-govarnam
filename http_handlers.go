@@ -290,6 +290,64 @@ func handleLanguageDownload(c echo.Context) error {
 	return c.Attachment(filepath.(string), langCode+".vst")
 }
 
+func handleSchemeInfo(c echo.Context) error {
+	var (
+		schemeID = c.Param("schemeID")
+	)
+
+	sd, err := getSchemeDetails(schemeID)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
+	}
+
+	return c.JSON(http.StatusOK, sd)
+}
+
+func handleSchemeDefinitions(c echo.Context) error {
+	var (
+		schemeID = c.Param("schemeID")
+		// app      = c.Get("app").(*App)
+	)
+
+	// do caching
+
+	sd, err := getSchemeDetails(schemeID)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
+	}
+
+	result, err := getSchemeDefinitions(c.Request().Context(), sd)
+
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
+	}
+
+	return c.JSON(http.StatusOK, schemeDefinition{standardResponse: newStandardResponse(), Details: sd, Definitions: result})
+}
+
+func handleSchemeLetterDefinitions(c echo.Context) error {
+	var (
+		schemeID = c.Param("schemeID")
+		letter   = c.Param("letter")
+		// app      = c.Get("app").(*App)
+	)
+
+	// do caching
+
+	sd, err := getSchemeDetails(schemeID)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
+	}
+
+	result, err := getSchemeLetterDefinitions(c.Request().Context(), sd, letter)
+
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
+	}
+
+	return c.JSON(http.StatusOK, schemeDefinition{standardResponse: newStandardResponse(), Details: sd, Definitions: result})
+}
+
 func handleLearn(c echo.Context) error {
 	var (
 		a args

@@ -14,7 +14,7 @@ require (
 	github.com/mattn/go-sqlite3 v1.14.6
 	github.com/spf13/pflag v1.0.5
 	github.com/valyala/fasttemplate v1.2.0 // indirect
-	gitlab.com/subins2000/govarnam v1.2.1-0.20210808141030-a2a7b0479f9d // indirect
+	gitlab.com/subins2000/govarnam v1.2.1-0.20210812210540-d5f8e7f80159 // indirect
 	golang.org/x/crypto v0.0.0-20200709230013-948cd5f35899 // indirect
 	golang.org/x/net v0.0.0-20200707034311-ab3426394381 // indirect
 	golang.org/x/sys v0.0.0-20200625212154-ddb9806d33ae // indirect
