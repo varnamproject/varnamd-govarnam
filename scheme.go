@@ -43,16 +43,7 @@ func getSchemeDetails(schemeID string) (govarnamgo.SchemeDetails, error) {
 	return schemeInfo, nil
 }
 
-func getSchemeDefinitions(ctx context.Context, sd govarnamgo.SchemeDetails) ([]schemeDefinitionItem, error) {
-	schemeID := sd.Identifier
-
-	// Vowels
-	var symbol govarnamgo.Symbol
-	// TODO use constant value from govarnam instead of hardcode
-	symbol.Type = 1 // Vowel
-	searchResultsI, _ := searchSymbolTable(ctx, schemeID, symbol)
-	searchResults := searchResultsI.([]govarnamgo.Symbol)
-
+func getItemsFromSearchResults(ctx context.Context, searchResults []govarnamgo.Symbol) map[string]matches {
 	items := make(map[string]matches)
 
 	for _, r := range searchResults {
@@ -74,6 +65,21 @@ func getSchemeDefinitions(ctx context.Context, sd govarnamgo.SchemeDetails) ([]s
 			items[r.Value1] = matches{exact, possibility}
 		}
 	}
+
+	return items
+}
+
+func getSchemeDefinitions(ctx context.Context, sd govarnamgo.SchemeDetails) ([]schemeDefinitionItem, error) {
+	schemeID := sd.Identifier
+
+	// Vowels
+	var symbol govarnamgo.Symbol
+	// TODO use constant value from govarnam instead of hardcode
+	symbol.Type = 1 // Vowel
+	searchResultsI, _ := searchSymbolTable(ctx, schemeID, symbol)
+	searchResults := searchResultsI.([]govarnamgo.Symbol)
+
+	items := getItemsFromSearchResults(ctx, searchResults)
 
 	// For sorting map
 	keys := make([]string, 0, len(items))
@@ -98,6 +104,9 @@ func getSchemeDefinitions(ctx context.Context, sd govarnamgo.SchemeDetails) ([]s
 	if sd.LangCode == "ml" {
 		categorizedResult = append(categorizedResult, getMLConsonants(ctx)...)
 	}
+
+	// zwj, virama, other characters
+	categorizedResult = append(categorizedResult, getOtherCharacters(ctx, sd)...)
 
 	return categorizedResult, nil
 }
@@ -206,4 +215,60 @@ func getSchemeLetterDefinitions(ctx context.Context, sd govarnamgo.SchemeDetails
 	}
 
 	return categorizedResult, nil
+}
+
+func getCategorizedFromSearchResults(ctx context.Context, searchResults []govarnamgo.Symbol, category string) []schemeDefinitionItem {
+	var categorizedResult []schemeDefinitionItem
+	items := getItemsFromSearchResults(ctx, searchResults)
+
+	for letter, r := range items {
+		if category == "" {
+			category = letter
+		}
+		categorizedResult = append(categorizedResult, schemeDefinitionItem{
+			Letter:      letter,
+			Category:    category,
+			Exact:       r.Exact,
+			Possibility: r.Possibility,
+		})
+	}
+
+	return categorizedResult
+}
+
+func getOtherCharacters(ctx context.Context, sd govarnamgo.SchemeDetails) []schemeDefinitionItem {
+	var categorizedResult []schemeDefinitionItem
+
+	i := 6        // Symbol
+	for i <= 10 { // to Other symbols
+		var symbol govarnamgo.Symbol
+		symbol.Type = i
+		searchResultsI, _ := searchSymbolTable(ctx, sd.Identifier, symbol)
+		searchResults := searchResultsI.([]govarnamgo.Symbol)
+
+		categorizedResult = append(categorizedResult, getCategorizedFromSearchResults(ctx, searchResults, "")...)
+
+		i++
+	}
+
+	var symbol govarnamgo.Symbol
+	symbol.Type = 11 // ZWNJ
+	searchResultsI, _ := searchSymbolTable(ctx, sd.Identifier, symbol)
+	searchResults := searchResultsI.([]govarnamgo.Symbol)
+
+	categorizedResult = append(categorizedResult, getCategorizedFromSearchResults(ctx, searchResults, "ZWNJ - Zero Width Non Joiner")...)
+
+	symbol.Type = 12 // ZWJ
+	searchResultsI, _ = searchSymbolTable(ctx, sd.Identifier, symbol)
+	searchResults = searchResultsI.([]govarnamgo.Symbol)
+
+	categorizedResult = append(categorizedResult, getCategorizedFromSearchResults(ctx, searchResults, "ZWJ - Zero Width Joiner")...)
+
+	symbol.Type = 13 // Period
+	searchResultsI, _ = searchSymbolTable(ctx, sd.Identifier, symbol)
+	searchResults = searchResultsI.([]govarnamgo.Symbol)
+
+	categorizedResult = append(categorizedResult, getCategorizedFromSearchResults(ctx, searchResults, "")...)
+
+	return categorizedResult
 }
