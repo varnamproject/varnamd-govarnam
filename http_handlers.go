@@ -143,32 +143,27 @@ func handleReverseTransliteration(c echo.Context) error {
 		app      = c.Get("app").(*App)
 	)
 
-	result, err := app.cache.Get(langCode, word)
+	words, err := app.cache.Get(langCode, word)
 	if err != nil {
-		res, err := reveseTransliterate(langCode, word)
+		result, err := reveseTransliterate(langCode, word)
 		if err != nil {
 			app.log.Printf("error in reverse transliterationg, err: %s", err.Error())
 			return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("error transliterating given string. message: %s", err.Error()))
 		}
 
-		result = []string{res.(string)}
-		_ = app.cache.Set(langCode, word, res.(string))
+		for _, sug := range result.([]govarnamgo.Suggestion) {
+			words = append(words, sug.Word)
+		}
+
+		_ = app.cache.Set(langCode, word, words...)
 	}
 
-	if len(result) <= 0 {
+	if len(words) <= 0 {
 		app.log.Printf("no reverse transliteration found for lang: %s word: %s", langCode, word)
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("no transliteration found for lanugage: %s, word: %s", langCode, word))
 	}
 
-	response := struct {
-		standardResponse
-		Result string `json:"result"`
-	}{
-		newStandardResponse(),
-		result[0],
-	}
-
-	return c.JSON(http.StatusOK, response)
+	return c.JSON(http.StatusOK, transliterationResponse{standardResponse: newStandardResponse(), Result: words, Input: word})
 }
 
 // func handleMetadata(c echo.Context) error {
