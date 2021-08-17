@@ -113,13 +113,13 @@ func getSchemeDefinitions(ctx context.Context, sd govarnamgo.SchemeDetails) ([]s
 
 func getMLConsonants(ctx context.Context, sd govarnamgo.SchemeDetails) []schemeDefinitionItem {
 	letterSets := map[string][]string{
-		"ക":          []string{"ക", "ഖ", "ഗ", "ഘ", "ങ"},
-		"ച":          []string{"ച", "ഛ", "ജ", "ഝ", "ഞ"},
-		"ട":          []string{"ട", "ഠ", "ഡ", "ഢ", "ണ"},
-		"ത":          []string{"ത", "ഥ", "ദ", "ധ", "ന", "ഩ"},
-		"പ":          []string{"പ", "ഫ", "ബ", "ഭ", "മ"},
-		"യ":          []string{"യ", "ര", "ല", "വ", "ശ", "ഷ", "സ", "ഹ", "ള", "ഴ", "റ"},
-		"ചില്ലക്ഷരം": []string{"ൻ", "ർ", "ൽ", "ൾ", "ൺ", "ൿ"},
+		"ക":          {"ക", "ഖ", "ഗ", "ഘ", "ങ"},
+		"ച":          {"ച", "ഛ", "ജ", "ഝ", "ഞ"},
+		"ട":          {"ട", "ഠ", "ഡ", "ഢ", "ണ"},
+		"ത":          {"ത", "ഥ", "ദ", "ധ", "ന", "ഩ"},
+		"പ":          {"പ", "ഫ", "ബ", "ഭ", "മ"},
+		"യ":          {"യ", "ര", "ല", "വ", "ശ", "ഷ", "സ", "ഹ", "ള", "ഴ", "റ"},
+		"ചില്ലക്ഷരം": {"ൻ", "ർ", "ൽ", "ൾ", "ൺ", "ൿ"},
 	}
 
 	items := make(map[string]matches)
@@ -198,8 +198,15 @@ func getSchemeLetterDefinitions(ctx context.Context, sd govarnamgo.SchemeDetails
 		}
 	}
 
+	keys := make([]string, 0, len(items))
+	for k := range items {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+
 	var categorizedResult []schemeDefinitionItem
-	for letterCombo, item := range items {
+	for _, letterCombo := range keys {
+		item := items[letterCombo]
 		letterComboRunes := []rune(letterCombo)
 		category := letter
 		if len(letterComboRunes) > 2 {
@@ -239,36 +246,28 @@ func getCategorizedFromSearchResults(ctx context.Context, searchResults []govarn
 func getOtherCharacters(ctx context.Context, sd govarnamgo.SchemeDetails) []schemeDefinitionItem {
 	var categorizedResult []schemeDefinitionItem
 
+	categoryNames := map[int]string{
+		6:  "Symbol",
+		7:  "Anusvara",
+		8:  "Visarga",
+		9:  "Virama",
+		10: "Other",
+		11: "ZWNJ - Zero Width Non Joiner",
+		12: "ZWJ - Zero Width Joiner",
+		13: "Period",
+	}
+
 	i := 6        // Symbol
-	for i <= 10 { // to Other symbols
+	for i <= 13 { // to Other symbols
 		var symbol govarnamgo.Symbol
 		symbol.Type = i
 		searchResultsI, _ := searchSymbolTable(ctx, sd.Identifier, symbol)
 		searchResults := searchResultsI.([]govarnamgo.Symbol)
 
-		categorizedResult = append(categorizedResult, getCategorizedFromSearchResults(ctx, searchResults, "")...)
+		categorizedResult = append(categorizedResult, getCategorizedFromSearchResults(ctx, searchResults, categoryNames[i])...)
 
 		i++
 	}
-
-	var symbol govarnamgo.Symbol
-	symbol.Type = 11 // ZWNJ
-	searchResultsI, _ := searchSymbolTable(ctx, sd.Identifier, symbol)
-	searchResults := searchResultsI.([]govarnamgo.Symbol)
-
-	categorizedResult = append(categorizedResult, getCategorizedFromSearchResults(ctx, searchResults, "ZWNJ - Zero Width Non Joiner")...)
-
-	symbol.Type = 12 // ZWJ
-	searchResultsI, _ = searchSymbolTable(ctx, sd.Identifier, symbol)
-	searchResults = searchResultsI.([]govarnamgo.Symbol)
-
-	categorizedResult = append(categorizedResult, getCategorizedFromSearchResults(ctx, searchResults, "ZWJ - Zero Width Joiner")...)
-
-	symbol.Type = 13 // Period
-	searchResultsI, _ = searchSymbolTable(ctx, sd.Identifier, symbol)
-	searchResults = searchResultsI.([]govarnamgo.Symbol)
-
-	categorizedResult = append(categorizedResult, getCategorizedFromSearchResults(ctx, searchResults, "")...)
 
 	return categorizedResult
 }
