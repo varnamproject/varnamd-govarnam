@@ -15,7 +15,7 @@ import (
 	"time"
 
 	"github.com/labstack/echo/v4"
-	"gitlab.com/subins2000/govarnam/govarnamgo"
+	"github.com/varnamproject/govarnam/govarnamgo"
 )
 
 var errCacheSkipped = errors.New("cache skipped")

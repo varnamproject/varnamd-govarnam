@@ -13,7 +13,7 @@ import (
 	"strings"
 	"time"
 
-	"gitlab.com/subins2000/govarnam/govarnamgo"
+	"github.com/varnamproject/govarnam/govarnamgo"
 )
 
 type syncDispatcher struct {

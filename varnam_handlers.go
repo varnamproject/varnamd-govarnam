@@ -9,7 +9,7 @@ import (
 
 	"github.com/golang/groupcache"
 	_ "github.com/mattn/go-sqlite3"
-	"gitlab.com/subins2000/govarnam/govarnamgo"
+	"github.com/varnamproject/govarnam/govarnamgo"
 )
 
 type word struct {

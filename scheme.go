@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"sort"
 
-	"gitlab.com/subins2000/govarnam/govarnamgo"
+	"github.com/varnamproject/govarnam/govarnamgo"
 )
 
 type matches struct {
