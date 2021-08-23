@@ -8,7 +8,9 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"log"
 	"net/http"
+	"net/url"
 	"os"
 	"path"
 	"path/filepath"
@@ -102,6 +104,14 @@ func handleTransliteration(c echo.Context) error {
 		app      = c.Get("app").(*App)
 	)
 
+	// Resolving a bug in echo
+	// https://github.com/labstack/echo/issues/561
+	var err error
+	word, err = url.QueryUnescape(word)
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	words, err := app.cache.Get(langCode, word)
 	if err != nil {
 		result, err := transliterate(c.Request().Context(), langCode, word)
@@ -142,6 +152,14 @@ func handleReverseTransliteration(c echo.Context) error {
 		word     = c.Param("word")
 		app      = c.Get("app").(*App)
 	)
+
+	// Resolving a bug in echo
+	// https://github.com/labstack/echo/issues/561
+	var err error
+	word, err = url.QueryUnescape(word)
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	words, err := app.cache.Get(langCode, word)
 	if err != nil {
