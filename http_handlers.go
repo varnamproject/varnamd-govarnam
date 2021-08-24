@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"net/url"
 	"os"
@@ -109,14 +108,15 @@ func handleTransliteration(c echo.Context) error {
 	var err error
 	word, err = url.QueryUnescape(word)
 	if err != nil {
-		log.Fatal(err)
+		app.log.Printf("error in transliterating, err: %s", err.Error())
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("error transliterating given string. message: %s", err.Error()))
 	}
 
 	words, err := app.cache.Get(langCode, word)
 	if err != nil {
 		result, err := transliterate(c.Request().Context(), langCode, word)
 		if err != nil {
-			app.log.Printf("error in transliterationg, err: %s", err.Error())
+			app.log.Printf("error in transliterating, err: %s", err.Error())
 			return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("error transliterating given string. message: %s", err.Error()))
 		}
 
@@ -158,10 +158,12 @@ func handleReverseTransliteration(c echo.Context) error {
 	var err error
 	word, err = url.QueryUnescape(word)
 	if err != nil {
-		log.Fatal(err)
+		app.log.Printf("error in reverse transliterationg, err: %s", err.Error())
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("error transliterating given string. message: %s", err.Error()))
 	}
 
-	words, err := app.cache.Get(langCode, word)
+	// Separate namespace for reverse transliteration
+	words, err := app.cache.Get("rtl-"+langCode, word)
 	if err != nil {
 		result, err := reveseTransliterate(langCode, word)
 		if err != nil {
