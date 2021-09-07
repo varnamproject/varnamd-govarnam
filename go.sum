@@ -71,6 +71,8 @@ github.com/valyala/fasttemplate v1.2.0 h1:y3yXRCoDvC2HTtIHvL2cc7Zd+bqA+zqDO6oQzs
 github.com/valyala/fasttemplate v1.2.0/go.mod h1:UQGH1tvbgY+Nz5t2n7tXsz52dQxojPUpymEIMZ47gx8=
 github.com/varnamproject/govarnam v1.3.1-0.20210822180016-100928a7f8e5 h1:tlABwCSONA40AGTJjciAvTcc41gOhGuABUQMA4d7KoU=
 github.com/varnamproject/govarnam v1.3.1-0.20210822180016-100928a7f8e5/go.mod h1:VVinUytkFWjS5HHbWGBsHr5Zb6D1eny3FDBfQT19lCo=
+github.com/varnamproject/govarnam v1.4.1-0.20210906190643-31f85f21b316 h1:6Wa1lT7xFNVxUMik6t6YOxiN8BHgxS3lBTt81QtpaAc=
+github.com/varnamproject/govarnam v1.4.1-0.20210906190643-31f85f21b316/go.mod h1:VVinUytkFWjS5HHbWGBsHr5Zb6D1eny3FDBfQT19lCo=
 golang.org/x/crypto v0.0.0-20190308221718-c2843e01d9a2/go.mod h1:djNgcEr1/C05ACkg1iLfiJU5Ep61QUkGW8qpdssI0+w=
 golang.org/x/crypto v0.0.0-20200221231518-2aa609cf4a9d/go.mod h1:LzIPMQfyMNhhGPhUkYOs5KpL4U8rLKemX1yGLhDgUto=
 golang.org/x/crypto v0.0.0-20200622213623-75b288015ac9/go.mod h1:LzIPMQfyMNhhGPhUkYOs5KpL4U8rLKemX1yGLhDgUto=

@@ -120,23 +120,7 @@ func handleTransliteration(c echo.Context) error {
 			return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("error transliterating given string. message: %s", err.Error()))
 		}
 
-		for _, sug := range result.(govarnamgo.TransliterationResult).ExactMatches {
-			words = append(words, sug.Word)
-		}
-
-		for _, sug := range result.(govarnamgo.TransliterationResult).PatternDictionarySuggestions {
-			words = append(words, sug.Word)
-		}
-
-		for _, sug := range result.(govarnamgo.TransliterationResult).DictionarySuggestions {
-			words = append(words, sug.Word)
-		}
-
-		for _, sug := range result.(govarnamgo.TransliterationResult).GreedyTokenized {
-			words = append(words, sug.Word)
-		}
-
-		for _, sug := range result.(govarnamgo.TransliterationResult).TokenizerSuggestions {
+		for _, sug := range result.([]govarnamgo.Suggestion) {
 			words = append(words, sug.Word)
 		}
 
