@@ -92,7 +92,7 @@ func getOrCreateHandler(schemeIdentifier string, f func(handle *govarnamgo.Varna
 
 func transliterate(c context.Context, schemeIdentifier string, word string) (interface{}, error) {
 	return getOrCreateHandler(schemeIdentifier, func(handle *govarnamgo.VarnamHandle) (data interface{}, err error) {
-		return handle.Transliterate(c, word), nil
+		return handle.Transliterate(c, word)
 	})
 }
 
