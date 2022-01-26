@@ -32,6 +32,7 @@ func initHandlers(app *App, enableInternalApis bool) *echo.Echo {
 	e := echo.New()
 	e.GET("/tl/:langCode/:word", handleTransliteration)
 	e.GET("/rtl/:langCode/:word", handleReverseTransliteration)
+	e.GET("/atl/:langCode/:word", handleAdvancedTransliteration)
 	// e.GET("/meta/:langCode:", handleMetadata)
 	// e.GET("/download/:langCode/:downloadStart", handleDownload)
 	e.GET("/languages", handleLanguages)

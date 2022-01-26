@@ -44,6 +44,22 @@ type transliterationResponse struct {
 	Input  string   `json:"input"`
 }
 
+type suggestionResponse struct {
+	Word      string `json:"word"`
+	Weight    int    `json:"weight"`
+	LearnedOn int    `json:"learned_on"`
+}
+
+type advancedTransliterationResponse struct {
+	standardResponse
+	Input                        string               `json:"input"`
+	ExactMatches                 []suggestionResponse `json:"exact_matches"`
+	DictionarySuggestions        []suggestionResponse `json:"dictionary_suggestions"`
+	PatternDictionarySuggestions []suggestionResponse `json:"pattern_dictionary_suggestions"`
+	TokenizerSuggestions         []suggestionResponse `json:"tokenizer_suggestions"`
+	GreedyTokenized              []suggestionResponse `json:"greedy_tokenized"`
+}
+
 type metaResponse struct {
 	// Result *libvarnam.CorpusDetails `json:"result"`
 	standardResponse
@@ -128,6 +144,61 @@ func handleTransliteration(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, transliterationResponse{standardResponse: newStandardResponse(), Result: words, Input: word})
+}
+
+func handleAdvancedTransliteration(c echo.Context) error {
+	var (
+		langCode = c.Param("langCode")
+		word     = c.Param("word")
+		app      = c.Get("app").(*App)
+	)
+
+	// Resolving a bug in echo
+	// https://github.com/labstack/echo/issues/561
+	var err error
+	word, err = url.QueryUnescape(word)
+	if err != nil {
+		app.log.Printf("error in transliterating, err: %s", err.Error())
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("error transliterating given string. message: %s", err.Error()))
+	}
+
+	// TODO caching
+
+	result, err := transliterateAdvanced(c.Request().Context(), langCode, word)
+	if err != nil {
+		app.log.Printf("error in transliterating, err: %s", err.Error())
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("error transliterating given string. message: %s", err.Error()))
+	}
+
+	var varnamResult = result.(govarnamgo.TransliterationResult)
+	var response advancedTransliterationResponse
+
+	response.standardResponse = newStandardResponse()
+	response.Input = word
+
+	response.ExactMatches = []suggestionResponse{}
+	response.DictionarySuggestions = []suggestionResponse{}
+	response.PatternDictionarySuggestions = []suggestionResponse{}
+	response.TokenizerSuggestions = []suggestionResponse{}
+	response.GreedyTokenized = []suggestionResponse{}
+
+	for _, sug := range varnamResult.ExactMatches {
+		response.ExactMatches = append(response.ExactMatches, suggestionResponse(sug))
+	}
+	for _, sug := range varnamResult.DictionarySuggestions {
+		response.DictionarySuggestions = append(response.DictionarySuggestions, suggestionResponse(sug))
+	}
+	for _, sug := range varnamResult.PatternDictionarySuggestions {
+		response.PatternDictionarySuggestions = append(response.PatternDictionarySuggestions, suggestionResponse(sug))
+	}
+	for _, sug := range varnamResult.TokenizerSuggestions {
+		response.TokenizerSuggestions = append(response.TokenizerSuggestions, suggestionResponse(sug))
+	}
+	for _, sug := range varnamResult.GreedyTokenized {
+		response.GreedyTokenized = append(response.GreedyTokenized, suggestionResponse(sug))
+	}
+
+	return c.JSON(http.StatusOK, response)
 }
 
 func handleReverseTransliteration(c echo.Context) error {

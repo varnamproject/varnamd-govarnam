@@ -96,6 +96,12 @@ func transliterate(c context.Context, schemeIdentifier string, word string) (int
 	})
 }
 
+func transliterateAdvanced(c context.Context, schemeIdentifier string, word string) (interface{}, error) {
+	return getOrCreateHandler(schemeIdentifier, func(handle *govarnamgo.VarnamHandle) (data interface{}, err error) {
+		return handle.TransliterateAdvanced(c, word)
+	})
+}
+
 // func trainwords(schemeIdentifier, word, pattern string) (interface{}, error) {
 // 	return getOrCreateHandler(schemeIdentifier, func(handle *libvarnam.Varnam) (data interface{}, err error) {
 // 		return handle.Train(pattern,word)
