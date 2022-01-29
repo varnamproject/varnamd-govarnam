@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/gob"
 	"fmt"
 	"log"
 	"os"
@@ -153,10 +154,12 @@ func main() {
 	}
 
 	app := &App{
-		cache: NewMemCache(),
+		cache: NewCache(),
 		log:   log.New(os.Stdout, "", log.Ldate|log.Ltime|log.Lshortfile),
 		fs:    fs,
 	}
+
+	gob.Register(advancedTransliterationResponse{})
 
 	startSyncDispatcher()
 	startDaemon(app, config)

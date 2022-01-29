@@ -128,7 +128,9 @@ func handleTransliteration(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("error transliterating given string. message: %s", err.Error()))
 	}
 
-	words, err := app.cache.Get(langCode, word)
+	cacheKey := fmt.Sprintf("tl-%s-%s", langCode, word)
+
+	words, err := app.cache.GetString(cacheKey)
 	if err != nil {
 		result, err := transliterate(c.Request().Context(), langCode, word)
 		if err != nil {
@@ -140,7 +142,7 @@ func handleTransliteration(c echo.Context) error {
 			words = append(words, sug.Word)
 		}
 
-		_ = app.cache.Set(langCode, word, words...)
+		_ = app.cache.SetString(cacheKey, words...)
 	}
 
 	return c.JSON(http.StatusOK, transliterationResponse{standardResponse: newStandardResponse(), Result: words, Input: word})
@@ -162,41 +164,49 @@ func handleAdvancedTransliteration(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("error transliterating given string. message: %s", err.Error()))
 	}
 
-	// TODO caching
-
-	result, err := transliterateAdvanced(c.Request().Context(), langCode, word)
-	if err != nil {
-		app.log.Printf("error in transliterating, err: %s", err.Error())
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("error transliterating given string. message: %s", err.Error()))
-	}
-
-	var varnamResult = result.(govarnamgo.TransliterationResult)
 	var response advancedTransliterationResponse
+	var cacheKey = fmt.Sprintf("atl-%s-%s", langCode, word)
+
+	cached, err := app.cache.Get(cacheKey)
+	if err == nil {
+		response = cached.(advancedTransliterationResponse)
+	} else {
+		result, err := transliterateAdvanced(c.Request().Context(), langCode, word)
+		if err != nil {
+			app.log.Printf("error in transliterating, err: %s", err.Error())
+			return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("error transliterating given string. message: %s", err.Error()))
+		}
+
+		var varnamResult = result.(govarnamgo.TransliterationResult)
+
+		response.Input = word
+
+		response.ExactMatches = []suggestionResponse{}
+		response.DictionarySuggestions = []suggestionResponse{}
+		response.PatternDictionarySuggestions = []suggestionResponse{}
+		response.TokenizerSuggestions = []suggestionResponse{}
+		response.GreedyTokenized = []suggestionResponse{}
+
+		for _, sug := range varnamResult.ExactMatches {
+			response.ExactMatches = append(response.ExactMatches, suggestionResponse(sug))
+		}
+		for _, sug := range varnamResult.DictionarySuggestions {
+			response.DictionarySuggestions = append(response.DictionarySuggestions, suggestionResponse(sug))
+		}
+		for _, sug := range varnamResult.PatternDictionarySuggestions {
+			response.PatternDictionarySuggestions = append(response.PatternDictionarySuggestions, suggestionResponse(sug))
+		}
+		for _, sug := range varnamResult.TokenizerSuggestions {
+			response.TokenizerSuggestions = append(response.TokenizerSuggestions, suggestionResponse(sug))
+		}
+		for _, sug := range varnamResult.GreedyTokenized {
+			response.GreedyTokenized = append(response.GreedyTokenized, suggestionResponse(sug))
+		}
+
+		err = app.cache.Set(cacheKey, response)
+	}
 
 	response.standardResponse = newStandardResponse()
-	response.Input = word
-
-	response.ExactMatches = []suggestionResponse{}
-	response.DictionarySuggestions = []suggestionResponse{}
-	response.PatternDictionarySuggestions = []suggestionResponse{}
-	response.TokenizerSuggestions = []suggestionResponse{}
-	response.GreedyTokenized = []suggestionResponse{}
-
-	for _, sug := range varnamResult.ExactMatches {
-		response.ExactMatches = append(response.ExactMatches, suggestionResponse(sug))
-	}
-	for _, sug := range varnamResult.DictionarySuggestions {
-		response.DictionarySuggestions = append(response.DictionarySuggestions, suggestionResponse(sug))
-	}
-	for _, sug := range varnamResult.PatternDictionarySuggestions {
-		response.PatternDictionarySuggestions = append(response.PatternDictionarySuggestions, suggestionResponse(sug))
-	}
-	for _, sug := range varnamResult.TokenizerSuggestions {
-		response.TokenizerSuggestions = append(response.TokenizerSuggestions, suggestionResponse(sug))
-	}
-	for _, sug := range varnamResult.GreedyTokenized {
-		response.GreedyTokenized = append(response.GreedyTokenized, suggestionResponse(sug))
-	}
 
 	return c.JSON(http.StatusOK, response)
 }
@@ -218,7 +228,9 @@ func handleReverseTransliteration(c echo.Context) error {
 	}
 
 	// Separate namespace for reverse transliteration
-	words, err := app.cache.Get("rtl-"+langCode, word)
+	cacheKey := fmt.Sprintf("rtl-%s-%s", langCode, word)
+
+	words, err := app.cache.GetString(cacheKey)
 	if err != nil {
 		result, err := reveseTransliterate(langCode, word)
 		if err != nil {
@@ -230,7 +242,7 @@ func handleReverseTransliteration(c echo.Context) error {
 			words = append(words, sug.Word)
 		}
 
-		_ = app.cache.Set(langCode, word, words...)
+		_ = app.cache.SetString(cacheKey, words...)
 	}
 
 	if len(words) <= 0 {
@@ -530,7 +542,8 @@ func handleTrain(c echo.Context) error {
 
 	go func(args trainArgs) { ch <- args }(targs)
 
-	_, _ = app.cache.Delete(langCode, targs.Pattern)
+	cacheKey := fmt.Sprintf("tl-%s-%s", langCode, targs.Pattern)
+	_, _ = app.cache.Delete(cacheKey)
 
 	return c.JSON(200, "Word Trained")
 }
