@@ -10,9 +10,9 @@ import (
 )
 
 const (
-	defaultCacheSize = 100 << 20      // 100 MB cache
-	defaultExpiry    = time.Hour * 24 // Cache for 24 hours
-	stringSeparator  = "<>"           // Assuming the separator wont be used in any case.
+	defaultCacheSize = 1000 << 20      // 1000 MB cache
+	defaultExpiry    = time.Hour * 120 // Cache for 120 hours
+	stringSeparator  = "<>"            // Assuming the separator wont be used in any case.
 )
 
 // Cache objects.
