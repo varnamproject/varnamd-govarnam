@@ -179,14 +179,6 @@ func handleAdvancedTransliteration(c echo.Context) error {
 
 		var varnamResult = result.(govarnamgo.TransliterationResult)
 
-		response.Input = word
-
-		response.ExactMatches = []suggestionResponse{}
-		response.DictionarySuggestions = []suggestionResponse{}
-		response.PatternDictionarySuggestions = []suggestionResponse{}
-		response.TokenizerSuggestions = []suggestionResponse{}
-		response.GreedyTokenized = []suggestionResponse{}
-
 		for _, sug := range varnamResult.ExactMatches {
 			response.ExactMatches = append(response.ExactMatches, suggestionResponse(sug))
 		}
@@ -203,7 +195,26 @@ func handleAdvancedTransliteration(c echo.Context) error {
 			response.GreedyTokenized = append(response.GreedyTokenized, suggestionResponse(sug))
 		}
 
-		err = app.cache.Set(cacheKey, response)
+		_ = app.cache.Set(cacheKey, response)
+	}
+
+	response.Input = word
+
+	// Don't return null for array responses
+	if response.ExactMatches == nil {
+		response.ExactMatches = []suggestionResponse{}
+	}
+	if response.DictionarySuggestions == nil {
+		response.DictionarySuggestions = []suggestionResponse{}
+	}
+	if response.PatternDictionarySuggestions == nil {
+		response.PatternDictionarySuggestions = []suggestionResponse{}
+	}
+	if response.TokenizerSuggestions == nil {
+		response.TokenizerSuggestions = []suggestionResponse{}
+	}
+	if response.GreedyTokenized == nil {
+		response.GreedyTokenized = []suggestionResponse{}
 	}
 
 	response.standardResponse = newStandardResponse()

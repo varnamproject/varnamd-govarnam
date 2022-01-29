@@ -4,15 +4,14 @@ import (
 	"bytes"
 	"encoding/gob"
 	"strings"
-	"time"
 
 	"github.com/coocood/freecache"
 )
 
 const (
-	defaultCacheSize = 1000 << 20      // 1000 MB cache
-	defaultExpiry    = time.Hour * 120 // Cache for 120 hours
-	stringSeparator  = "<>"            // Assuming the separator wont be used in any case.
+	defaultCacheSize = 1000 << 20 // 1000 MB cache
+	defaultExpiry    = 0          // No expiry
+	stringSeparator  = "<>"       // Assuming the separator wont be used in any case.
 )
 
 // Cache objects.
