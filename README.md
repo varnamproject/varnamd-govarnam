@@ -1,25 +1,16 @@
-# varnamd
-=============
+# Varnam API Server
 
 Varnam daemon which also acts as a HTTP server. This program powers http://varnamproject.com
 
-### Installation
+## Installation
 
-You do not have to git clone the repo. Use the following command to clone and install varnamd:
+You need to have [govarnam](https://github.com/varnamproject/govarnam) installed on your local system for varnamd to run.
 
-`go get github.com/varnamproject/varnamd`
+* Clone
+* Run `go get` inside cloned folder
+* Use `go run .` for starting varnamd
 
-You need to have set the [$GOPATH](https://github.com/golang/go/wiki/GOPATH) environment variable for this to work. Do not worry about the directory structure since it will be created for you by the previous `go get`.
-
-`cd $GOPATH/src/github.com/varnamproject/varnamd`
-
-`go install`
-
-The binaries should now be present in `$GOPATH/bin/`
-
-`./$GOPATH/bin/varnamd` to run the server
-
-### Usage
+## Usage
 
 varnamd supports the following command line arguments:
 
@@ -37,15 +28,15 @@ varnamd supports the following command line arguments:
 + `log-to-file` boolean. If true, logs will be written to a file
 + `version`
 
-### API
+## API
 
-When a request is made to translate a word, say 'Malayalam',
+### Transliteration
 
-`Request URL:  https://api.varnamproject.com/tl/{langCode}/{Word}`
+```
+https://api.varnamproject.com/tl/{langCode}/{Word}
+```
 
-`Request Method: GET`
-
-and the response for https://api.varnamproject.com/tl/ml/Malayalam will be:
+Sample: `https://api.varnamproject.com/tl/ml/Malayalam`. Response:
 
 ```json
 {
@@ -68,7 +59,5 @@ and the response for https://api.varnamproject.com/tl/ml/Malayalam will be:
   "input": "Malayalam"
 }
 ```
-
-
 
 ##### see server.go for supported APIs.
