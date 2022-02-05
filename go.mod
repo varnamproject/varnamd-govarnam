@@ -15,7 +15,7 @@ require (
 	github.com/mitchellh/mapstructure v1.4.2 // indirect
 	github.com/pelletier/go-toml v1.9.4 // indirect
 	github.com/spf13/pflag v1.0.5
-	github.com/varnamproject/govarnam v1.7.0
+	github.com/varnamproject/govarnam v1.8.0
 	golang.org/x/crypto v0.0.0-20210921155107-089bfa567519 // indirect
 	golang.org/x/net v0.0.0-20211029224645-99673261e6eb // indirect
 	golang.org/x/sys v0.0.0-20211030160813-b3129d9d1021 // indirect

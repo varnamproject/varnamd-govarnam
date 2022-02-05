@@ -53,6 +53,7 @@ type suggestionResponse struct {
 type advancedTransliterationResponse struct {
 	standardResponse
 	Input                        string               `json:"input"`
+	ExactWords                   []suggestionResponse `json:"exact_words"`
 	ExactMatches                 []suggestionResponse `json:"exact_matches"`
 	DictionarySuggestions        []suggestionResponse `json:"dictionary_suggestions"`
 	PatternDictionarySuggestions []suggestionResponse `json:"pattern_dictionary_suggestions"`
@@ -179,6 +180,9 @@ func handleAdvancedTransliteration(c echo.Context) error {
 
 		var varnamResult = result.(govarnamgo.TransliterationResult)
 
+		for _, sug := range varnamResult.ExactWords {
+			response.ExactWords = append(response.ExactWords, suggestionResponse(sug))
+		}
 		for _, sug := range varnamResult.ExactMatches {
 			response.ExactMatches = append(response.ExactMatches, suggestionResponse(sug))
 		}
@@ -201,6 +205,9 @@ func handleAdvancedTransliteration(c echo.Context) error {
 	response.Input = word
 
 	// Don't return null for array responses
+	if response.ExactWords == nil {
+		response.ExactWords = []suggestionResponse{}
+	}
 	if response.ExactMatches == nil {
 		response.ExactMatches = []suggestionResponse{}
 	}
