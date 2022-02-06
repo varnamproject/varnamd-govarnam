@@ -73,7 +73,7 @@ func getSchemeDefinitions(ctx context.Context, sd govarnamgo.SchemeDetails) ([]s
 	schemeID := sd.Identifier
 
 	// Vowels
-	var symbol govarnamgo.Symbol
+	symbol := govarnamgo.NewSearchSymbol()
 	// TODO use constant value from govarnam instead of hardcode
 	symbol.Type = 1 // Vowel
 	searchResultsI, _ := searchSymbolTable(ctx, schemeID, symbol)
