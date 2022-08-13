@@ -9,9 +9,9 @@ import (
 )
 
 const (
-	defaultCacheSize = 1000 << 20 // 1000 MB cache
-	defaultExpiry    = 0          // No expiry
-	stringSeparator  = "<>"       // Assuming the separator wont be used in any case.
+	defaultCacheSize = 1000 << 20  // 1000 MB cache
+	defaultExpiry    = 120 * 3600  // 120 hours cache expiry
+	stringSeparator  = "<>"        // Assuming the separator wont be used in any case.
 )
 
 // Cache objects.
