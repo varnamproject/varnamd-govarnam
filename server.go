@@ -106,6 +106,9 @@ func initHandlers(app *App, enableInternalApis bool) *echo.Echo {
 		// ContentSecurityPolicy: "default-src 'self'",
 	}))
 
+	// rate limit requests per second (prevent handler exhaustion)
+	e.Use(middleware.RateLimiter(middleware.NewRateLimiterMemoryStore(20)))
+
 	return e
 }
 
