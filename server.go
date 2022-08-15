@@ -83,8 +83,8 @@ func initHandlers(app *App, enableInternalApis bool) *echo.Echo {
 		LogValuesFunc: func(c echo.Context, v middleware.RequestLoggerValues) error {
 			remoteIpMasked := md5.Sum([]byte(c.RealIP()))
 			fmt.Printf(
-				"time: %v, status: %v, latency_human: %s, remote_ip: %x, error: %v, referer: %v, user_agent: %s, uri: %v\n",
-				time.Now().Format(time.RFC3339Nano), v.Status, v.Latency.String(), remoteIpMasked, v.Error, v.Referer, v.UserAgent, v.URI,
+				"[%v] status: %v, latency_human: %s, referer: %v, remote_ip: %x, error: %v, user_agent: %s, uri: %v\n",
+				time.Now().Format(time.RFC3339Nano), v.Status, v.Latency.String(), v.Referer, remoteIpMasked, v.Error, v.UserAgent, v.URI,
 			)
 			return nil
 		},
