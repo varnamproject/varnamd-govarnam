@@ -1,9 +1,12 @@
 package main
 
 import (
+	"crypto/md5"
 	"encoding/base64"
+	"fmt"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
@@ -65,7 +68,22 @@ func initHandlers(app *App, enableInternalApis bool) *echo.Echo {
 	}
 
 	e.Use(middleware.Recover())
-	e.Use(middleware.Logger())
+
+	e.Use(middleware.RequestLoggerWithConfig(middleware.RequestLoggerConfig{
+		LogStatus: true,
+		LogURI:    true,
+		BeforeNextFunc: func(c echo.Context) {
+			c.Set("customValueFromContext", 42)
+		},
+		LogValuesFunc: func(c echo.Context, v middleware.RequestLoggerValues) error {
+			remoteIpMasked := md5.Sum([]byte(v.RemoteIP))
+			fmt.Printf(
+				"status: %v, latency_human: %s, time: %v, referer: %v, remote_ip: %x, error: %v user_agent: %s, uri: %v\n",
+				v.Status, v.Latency.String(), time.Now().Format(time.RFC3339Nano), v.Referer, remoteIpMasked, v.Error, v.UserAgent, v.URI,
+			)
+			return nil
+		},
+	}))
 
 	// Custom middleware to set sigleton to app's context.
 	e.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
