@@ -70,16 +70,21 @@ func initHandlers(app *App, enableInternalApis bool) *echo.Echo {
 	e.Use(middleware.Recover())
 
 	e.Use(middleware.RequestLoggerWithConfig(middleware.RequestLoggerConfig{
-		LogStatus: true,
-		LogURI:    true,
+		LogStatus:    true,
+		LogURI:       true,
+		LogLatency:   true,
+		LogRemoteIP:  true,
+		LogReferer:   true,
+		LogUserAgent: true,
+		LogError:     true,
 		BeforeNextFunc: func(c echo.Context) {
 			c.Set("customValueFromContext", 42)
 		},
 		LogValuesFunc: func(c echo.Context, v middleware.RequestLoggerValues) error {
-			remoteIpMasked := md5.Sum([]byte(v.RemoteIP))
+			remoteIpMasked := md5.Sum([]byte(c.RealIP()))
 			fmt.Printf(
-				"status: %v, latency_human: %s, time: %v, referer: %v, remote_ip: %x, error: %v, user_agent: %s, uri: %v\n",
-				v.Status, v.Latency.String(), time.Now().Format(time.RFC3339Nano), v.Referer, remoteIpMasked, v.Error, v.UserAgent, v.URI,
+				"time: %v, status: %v, latency_human: %s, remote_ip: %x, error: %v, referer: %v, user_agent: %s, uri: %v\n",
+				time.Now().Format(time.RFC3339Nano), v.Status, v.Latency.String(), remoteIpMasked, v.Error, v.Referer, v.UserAgent, v.URI,
 			)
 			return nil
 		},
