@@ -1,10 +1,10 @@
 # Varnam API Server
 
-Varnam daemon which also acts as a HTTP server. This program powers http://varnamproject.com
+Varnam daemon which also acts as a HTTP server. This program powers https://varnamproject.com
 
 ## Installation
 
-You need to have [govarnam](https://github.com/varnamproject/govarnam) installed on your local system for varnamd to run.
+You need to have [govarnam](https://github.com/varnamproject/govarnam) installed in your local system for varnamd to run.
 
 * Clone
 * Run `go get` inside cloned folder
