@@ -3,15 +3,15 @@
     enable-ssl = false
     cert-path = ""
     key-file-path = ""
-    [max-handle-count]
-        default = 10
-        ml = 100
     upstream-url = "https://api.varnamproject.com"
     #upstream-url = "http://127.0.0.1:8124"
     #download-enabled-schemes = "ml,ml-inscript"
     sync-interval = "5s"
     accounts-enabled = false
     address = "127.0.0.1:8123"
+    [app.max-handle-count]
+        default = 10
+        ml = 100
 [users]
     [users.admin]
         password = "pass"
