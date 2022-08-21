@@ -1,4 +1,4 @@
-BIN := varnam.bin
+BIN := varnamd
 HASH := $(shell git rev-parse HEAD | cut -c 1-8)
 COMMIT_DATE := $(shell git show -s --format=%ci ${HASH})
 BUILD_DATE := $(shell date '+%Y-%m-%d %H:%M:%S')
