@@ -38,12 +38,21 @@ func isValidSchemeIdentifier(id string) bool {
 	return false
 }
 
+func getMaxHandleCount(schemeIdentifier string) int {
+	if val, ok := maxHandleCounts[schemeIdentifier]; ok {
+		return val
+	} else {
+		return maxHandleCounts["default"]
+	}
+}
+
 func initLanguageChannels() {
 	languageChannels = make(map[string]chan *govarnamgo.VarnamHandle)
 	channelsCount = make(map[string]int)
 	mutex = &sync.Mutex{}
 
 	for _, scheme := range schemeDetails {
+		maxHandleCount := getMaxHandleCount(scheme.Identifier)
 		languageChannels[scheme.Identifier] = make(chan *govarnamgo.VarnamHandle, maxHandleCount)
 		channelsCount[scheme.Identifier] = maxHandleCount
 
@@ -166,7 +175,7 @@ func sendHandlerToChannel(schemeIdentifier string, handle *govarnamgo.VarnamHand
 	count := channelsCount[schemeIdentifier]
 	mutex.Unlock()
 
-	if count == maxHandleCount {
+	if count == getMaxHandleCount(schemeIdentifier) {
 		log.Printf("Throw away handle")
 		handle.Close()
 

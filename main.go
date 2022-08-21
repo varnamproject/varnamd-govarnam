@@ -31,11 +31,12 @@ var (
 	startedAt             time.Time
 	buildVersion          string
 	buildDate             string
-	maxHandleCount        int
 	authEnabled           bool
 
 	// User accounts are stored here.
 	users map[string]userConfig
+
+	maxHandleCounts map[string]int
 )
 
 type appConfig struct {
@@ -131,9 +132,9 @@ func main() {
 		log.Fatal(err.Error())
 	}
 
-	maxHandleCount = kf.Int("app.max-handles")
-	if maxHandleCount <= 0 {
-		maxHandleCount = 10
+	maxHandleCounts = kf.IntMap("app.max-handle-count")
+	if maxHandleCounts["default"] <= 0 {
+		maxHandleCounts["default"] = 10
 	}
 
 	authEnabled = kf.Bool("app.accounts-enabled")
