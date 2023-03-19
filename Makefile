@@ -10,7 +10,7 @@ deps:
 
 ui/embed.js:
 	git clone git@github.com:varnamproject/webpage-embed-plugin.git --depth 1 || true
-	cd webpage-embed-plugin && yarn && yarn build && cp dist/embed.cjs ../ui/embed.js
+	cd webpage-embed-plugin && yarn && yarn build && cp dist/embed.cjs ../ui/embed.js && cp dist/style.css ../ui/embed.css
 
 build: ## Build the binary (default)
 	go build -o ${BIN} -ldflags="-X 'main.buildVersion=${VERSION}' -X 'main.buildDate=${BUILD_DATE}' -s -w"
