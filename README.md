@@ -6,27 +6,52 @@ Varnam daemon which also acts as a HTTP server. This program powers https://varn
 
 You need to have [govarnam](https://github.com/varnamproject/govarnam) installed in your local system for varnamd to run.
 
-* Clone
-* Run `go get` inside cloned folder
-* Use `go run .` for starting varnamd
+- Clone
+- Run `go get` inside cloned folder
+- Use `go run .` for starting varnamd
 
 ## Usage
 
 varnamd supports the following command line arguments:
 
-+ `p` int. Run daemon in specified port
-+ `max-handle-count` int. Maximum number of handles can be opened for each language
-+ `host` string. Host for the varnam daemon server. 
-+ `ui` string. UI directory path. Put your index.html here.
-+ `enable-internal-apis` boolean. Enable internal APIs
-+ `enable-ssl` boolean
-+ `cert-file-path` string. Certificate file path
-+ `key-file-path` string.
-+ `upstream` string. Provide an upstream server
-+ `enable-download`. string. Comma separated language identifier for which varnamd will download words from upstream
-+ `sync-interval` int.
-+ `log-to-file` boolean. If true, logs will be written to a file
-+ `version`
+- `p` int. Run daemon in specified port
+- `max-handle-count` int. Maximum number of handles can be opened for each language
+- `host` string. Host for the varnam daemon server.
+- `ui` string. UI directory path. Put your index.html here.
+- `enable-internal-apis` boolean. Enable internal APIs
+- `enable-ssl` boolean
+- `cert-file-path` string. Certificate file path
+- `key-file-path` string.
+- `upstream` string. Provide an upstream server
+- `enable-download`. string. Comma separated language identifier for which varnamd will download words from upstream
+- `sync-interval` int.
+- `log-to-file` boolean. If true, logs will be written to a file
+- `version`
+
+## Hosting
+
+Make it & run it:
+
+```bash
+make ui/embed.js
+make
+./restart.sh
+```
+
+Preferrably use caddy for reverse proxy:
+
+```ruby
+api.varnamproject.com varnam.subinsb.com {
+  reverse_proxy :8123
+  header {
+    Access-Control-Allow-Origin *
+    Access-Control-Allow-Credentials true
+    Access-Control-Allow-Methods *
+    Access-Control-Allow-Headers *
+    defer
+  }
+}
+```
 
 ## API
 
