@@ -22,6 +22,10 @@ _testmain.go
 *.exe
 *.test
 *.prof
+
 varnamd
 !init.d/varnamd
 *.log
+
+webpage-embed-plugin
+ui/embed.js
