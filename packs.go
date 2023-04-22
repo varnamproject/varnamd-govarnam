@@ -13,25 +13,25 @@ import (
 )
 
 // PackVersion Details of a pack version
-type PackVersion struct {
+type PackPage struct {
 	Identifier  string `json:"identifier"` // Pack identifier is unique across all language packs. Example: ml-basic-1
-	Version     int    `json:"version"`
+	Page        int    `json:"page"`
 	Description string `json:"description"`
 	Size        int    `json:"size"`
 }
 
 // Pack Details of a pack
 type Pack struct {
-	Identifier  string        `json:"identifier"`
-	Name        string        `json:"name"`
-	Description string        `json:"description"`
-	LangCode    string        `json:"lang"`
-	Versions    []PackVersion `json:"versions"`
+	Identifier  string     `json:"identifier"`
+	Name        string     `json:"name"`
+	Description string     `json:"description"`
+	LangCode    string     `json:"lang"`
+	Pages       []PackPage `json:"pages"`
 }
 
 type packDownload struct {
 	Pack     *Pack
-	Version  *PackVersion
+	Page     *PackPage
 	FilePath string
 }
 
@@ -46,7 +46,7 @@ func fileExists(filename string) bool {
 }
 
 // After a new pack download from upstream, update packs.json with installed packs
-func updatePacksInfo(langCode string, pack *Pack, packVersion *PackVersion) error {
+func updatePacksInfo(langCode string, pack *Pack, packPage *PackPage) error {
 	packs, err := getPacksInfo()
 	if err != nil {
 		return err
@@ -65,10 +65,10 @@ func updatePacksInfo(langCode string, pack *Pack, packVersion *PackVersion) erro
 
 	if existingPack == nil {
 		// will have one element
-		pack.Versions = []PackVersion{*packVersion}
+		pack.Pages = []PackPage{*packPage}
 	} else {
 		// Append new pack version
-		existingPack.Versions = append(existingPack.Versions, *packVersion)
+		existingPack.Pages = append(existingPack.Pages, *packPage)
 
 		pack = existingPack
 	}
@@ -93,8 +93,8 @@ func updatePacksInfo(langCode string, pack *Pack, packVersion *PackVersion) erro
 // Download pack from upstream
 func downloadPackFile(langCode, packIdentifier, packVersionIdentifier string) (packDownload, error) {
 	var (
-		pack        *Pack
-		packVersion *PackVersion = nil
+		pack     *Pack
+		packPage *PackPage = nil
 	)
 
 	packInstalled, _ := getPackVersionInfo(langCode, packIdentifier, packVersionIdentifier)
@@ -124,14 +124,14 @@ func downloadPackFile(langCode, packIdentifier, packVersionIdentifier string) (p
 		return packDownload{}, err
 	}
 
-	for _, version := range pack.Versions {
+	for _, version := range pack.Pages {
 		if version.Identifier == packVersionIdentifier {
-			packVersion = &version
+			packPage = &version
 			break
 		}
 	}
 
-	if packVersion == nil {
+	if packPage == nil {
 		return packDownload{}, fmt.Errorf("Pack version not found")
 	}
 
@@ -177,7 +177,7 @@ func downloadPackFile(langCode, packIdentifier, packVersionIdentifier string) (p
 		return packDownload{}, err
 	}
 
-	return packDownload{Pack: pack, Version: packVersion, FilePath: filePath}, nil
+	return packDownload{Pack: pack, Page: packPage, FilePath: filePath}, nil
 }
 
 func getPackFilePath(langCode, packIdentifier, packVersionIdentifier string) (string, error) {
@@ -195,18 +195,18 @@ func getPackFilePath(langCode, packIdentifier, packVersionIdentifier string) (st
 	return packFilePath, nil
 }
 
-func getPackVersionInfo(langCode string, packIdentifier string, packVersionIdentifier string) (*PackVersion, error) {
+func getPackVersionInfo(langCode string, packIdentifier string, packVersionIdentifier string) (*PackPage, error) {
 	pack, err := getPackInfo(langCode, packIdentifier)
 
 	if err != nil {
 		return nil, err
 	}
 
-	var packVersion *PackVersion = nil
+	var packVersion *PackPage = nil
 
-	for _, version := range pack.Versions {
-		if version.Identifier == packVersionIdentifier {
-			packVersion = &version
+	for _, page := range pack.Pages {
+		if page.Identifier == packVersionIdentifier {
+			packVersion = &page
 			break
 		}
 	}

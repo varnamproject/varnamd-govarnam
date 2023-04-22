@@ -822,7 +822,7 @@ func handlePackDownloadRequest(c echo.Context) error {
 	}
 
 	// Add pack.json with the installed pack versions
-	err = updatePacksInfo(args.LangCode, downloadResult.Pack, downloadResult.Version)
+	err = updatePacksInfo(args.LangCode, downloadResult.Pack, downloadResult.Page)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
