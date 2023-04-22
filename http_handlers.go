@@ -94,7 +94,7 @@ type trainBulkArgs struct {
 type packDownloadArgs struct {
 	LangCode   string `json:"lang"`
 	Identifier string `json:"pack"`
-	Version    string `json:"version"`
+	Page       string `json:"page"`
 }
 
 func handleStatus(c echo.Context) error {
@@ -733,17 +733,17 @@ func handlePackInfo(c echo.Context) error {
 	return c.JSON(http.StatusOK, pack)
 }
 
-func handlePackVersionInfo(c echo.Context) error {
+func handlePackPageInfo(c echo.Context) error {
 	var (
-		langCode              = c.Param("langCode")
-		packIdentifier        = c.Param("packIdentifier")
-		packVersionIdentifier = c.Param("packVersionIdentifier")
+		langCode           = c.Param("langCode")
+		packIdentifier     = c.Param("packIdentifier")
+		packPageIdentifier = c.Param("packPageIdentifier")
 	)
 
-	pack, err := getPackVersionInfo(langCode, packIdentifier, packVersionIdentifier)
+	pack, err := getPackPageInfo(langCode, packIdentifier, packPageIdentifier)
 	if err != nil {
 		statusCode := http.StatusBadRequest
-		if err.Error() == "Pack version not found" {
+		if err.Error() == "Pack page not found" {
 			statusCode = http.StatusNotFound
 		}
 
@@ -755,16 +755,16 @@ func handlePackVersionInfo(c echo.Context) error {
 
 func handlePacksDownload(c echo.Context) error {
 	var (
-		langCode              = c.Param("langCode")
-		packIdentifier        = c.Param("packIdentifier")
-		packVersionIdentifier = c.Param("packVersionIdentifier")
+		langCode           = c.Param("langCode")
+		packIdentifier     = c.Param("packIdentifier")
+		packPageIdentifier = c.Param("packPageIdentifier")
 	)
 
-	if _, err := getPackVersionInfo(langCode, packIdentifier, packVersionIdentifier); err != nil {
+	if _, err := getPackPageInfo(langCode, packIdentifier, packPageIdentifier); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
 
-	packFilePath, err := getPackFilePath(langCode, packIdentifier, packVersionIdentifier)
+	packFilePath, err := getPackFilePath(langCode, packIdentifier, packPageIdentifier)
 
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
@@ -791,7 +791,7 @@ func handlePacksDownload(c echo.Context) error {
 		}
 	}
 
-	return c.Attachment(packFileGzipPath, packVersionIdentifier)
+	return c.Attachment(packFileGzipPath, packPageIdentifier)
 }
 
 // varnamd Admin can download packs from upstream
@@ -809,7 +809,7 @@ func handlePackDownloadRequest(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("error getting metadata. message: %s", err.Error()))
 	}
 
-	downloadResult, err = downloadPackFile(args.LangCode, args.Identifier, args.Version)
+	downloadResult, err = downloadPackFile(args.LangCode, args.Identifier, args.Page)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("error downloading pack: %s", err.Error()))
 	}
@@ -821,7 +821,7 @@ func handlePackDownloadRequest(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, fmt.Sprintf("Error importing from '%s'\n", err.Error()))
 	}
 
-	// Add pack.json with the installed pack versions
+	// Add pack.json with the installed pack pages
 	err = updatePacksInfo(args.LangCode, downloadResult.Pack, downloadResult.Page)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())

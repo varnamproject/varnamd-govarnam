@@ -12,7 +12,7 @@ import (
 	"path"
 )
 
-// PackVersion Details of a pack version
+// PackPage Details of a pack page
 type PackPage struct {
 	Identifier  string `json:"identifier"` // Pack identifier is unique across all language packs. Example: ml-basic-1
 	Page        int    `json:"page"`
@@ -67,7 +67,7 @@ func updatePacksInfo(langCode string, pack *Pack, packPage *PackPage) error {
 		// will have one element
 		pack.Pages = []PackPage{*packPage}
 	} else {
-		// Append new pack version
+		// Append new pack page
 		existingPack.Pages = append(existingPack.Pages, *packPage)
 
 		pack = existingPack
@@ -91,13 +91,13 @@ func updatePacksInfo(langCode string, pack *Pack, packPage *PackPage) error {
 }
 
 // Download pack from upstream
-func downloadPackFile(langCode, packIdentifier, packVersionIdentifier string) (packDownload, error) {
+func downloadPackFile(langCode, packIdentifier, packPageIdentifier string) (packDownload, error) {
 	var (
 		pack     *Pack
 		packPage *PackPage = nil
 	)
 
-	packInstalled, _ := getPackVersionInfo(langCode, packIdentifier, packVersionIdentifier)
+	packInstalled, _ := getPackPageInfo(langCode, packIdentifier, packPageIdentifier)
 	if packInstalled != nil {
 		return packDownload{}, fmt.Errorf("Pack already installed")
 	}
@@ -124,20 +124,20 @@ func downloadPackFile(langCode, packIdentifier, packVersionIdentifier string) (p
 		return packDownload{}, err
 	}
 
-	for _, version := range pack.Pages {
-		if version.Identifier == packVersionIdentifier {
-			packPage = &version
+	for _, page := range pack.Pages {
+		if page.Identifier == packPageIdentifier {
+			packPage = &page
 			break
 		}
 	}
 
 	if packPage == nil {
-		return packDownload{}, fmt.Errorf("Pack version not found")
+		return packDownload{}, fmt.Errorf("Pack page not found")
 	}
 
-	fileURL := fmt.Sprintf("%s/packs/%s/%s/%s/download", varnamdConfig.upstream, langCode, packIdentifier, packVersionIdentifier)
+	fileURL := fmt.Sprintf("%s/packs/%s/%s/%s/download", varnamdConfig.upstream, langCode, packIdentifier, packPageIdentifier)
 	fileDir := path.Join(getPacksDir(), langCode, packIdentifier)
-	filePath := path.Join(fileDir, packVersionIdentifier)
+	filePath := path.Join(fileDir, packPageIdentifier)
 
 	if !fileExists(fileDir) {
 		os.MkdirAll(fileDir, 0755)
@@ -180,13 +180,13 @@ func downloadPackFile(langCode, packIdentifier, packVersionIdentifier string) (p
 	return packDownload{Pack: pack, Page: packPage, FilePath: filePath}, nil
 }
 
-func getPackFilePath(langCode, packIdentifier, packVersionIdentifier string) (string, error) {
-	if _, err := getPackVersionInfo(langCode, packIdentifier, packVersionIdentifier); err != nil {
+func getPackFilePath(langCode, packIdentifier, packPageIdentifier string) (string, error) {
+	if _, err := getPackPageInfo(langCode, packIdentifier, packPageIdentifier); err != nil {
 		return "", err
 	}
 
 	// Example: .varnamd/ml/ml-basic/ml-basic-1.vlf
-	packFilePath := path.Join(getPacksDir(), langCode, packIdentifier, packVersionIdentifier) + ".vlf"
+	packFilePath := path.Join(getPacksDir(), langCode, packIdentifier, packPageIdentifier) + ".vlf"
 
 	if !fileExists(packFilePath) {
 		return "", errors.New("Pack file not found")
@@ -195,27 +195,27 @@ func getPackFilePath(langCode, packIdentifier, packVersionIdentifier string) (st
 	return packFilePath, nil
 }
 
-func getPackVersionInfo(langCode string, packIdentifier string, packVersionIdentifier string) (*PackPage, error) {
+func getPackPageInfo(langCode string, packIdentifier string, packPageIdentifier string) (*PackPage, error) {
 	pack, err := getPackInfo(langCode, packIdentifier)
 
 	if err != nil {
 		return nil, err
 	}
 
-	var packVersion *PackPage = nil
+	var packPage *PackPage = nil
 
 	for _, page := range pack.Pages {
-		if page.Identifier == packVersionIdentifier {
-			packVersion = &page
+		if page.Identifier == packPageIdentifier {
+			packPage = &page
 			break
 		}
 	}
 
-	if packVersion == nil {
-		return nil, fmt.Errorf("Pack version not found")
+	if packPage == nil {
+		return nil, fmt.Errorf("Pack page not found")
 	}
 
-	return packVersion, nil
+	return packPage, nil
 }
 
 func getPackInfo(langCode string, packIdentifier string) (*Pack, error) {
