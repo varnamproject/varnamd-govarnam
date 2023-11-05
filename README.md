@@ -10,6 +10,10 @@ You need to have [govarnam](https://github.com/varnamproject/govarnam) installed
 - Run `go get` inside cloned folder
 - Use `go run .` for starting varnamd
 
+## Docker
+For Docker installation and usage, refer to the [Docker setup](README-docker.md).
+
+
 ## Usage
 
 varnamd supports the following command line arguments:
