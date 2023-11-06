@@ -43,10 +43,11 @@ COPY --from=build /usr/local/include/libgovarnam.h /usr/local/include/
 COPY --from=build /usr/local/lib/pkgconfig/govarnam.pc /usr/local/lib/pkgconfig/
 
 # Binaries.
-RUN mkdir -p /govarnam/ui
+RUN mkdir -p /varnamd/ui
 COPY --from=build /app/govarnam/varnamcli /usr/local/bin/
-COPY --from=build /app/varnamd-govarnam/varnamd-govarnam /usr/local/bin/
-COPY --from=build /app/varnamd-govarnam/ui /govarnam/ui/
+COPY --from=build /app/varnamd-govarnam/varnamd-govarnam /usr/local/bin/varnamd
+COPY --from=build /app/varnamd-govarnam/ui /varnamd/ui/
+COPY --from=build /app/varnamd-govarnam/config.toml /varnamd/
 
 # Setup the deps.
 ENV LD_LIBRARY_PATH=/usr/local/lib
@@ -58,6 +59,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends libc-dev sqlite
 
 EXPOSE 8123
 
-WORKDIR /govarnam
-ENTRYPOINT ["/usr/local/bin/varnamd-govarnam"]
-CMD ["--config", "/govarnam/config.toml"]
+WORKDIR /varnamd
+ENTRYPOINT ["/usr/local/bin/varnamd"]
+CMD ["--config", "/varnamd/config.toml"]
