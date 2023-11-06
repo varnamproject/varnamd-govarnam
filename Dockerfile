@@ -1,37 +1,64 @@
-FROM alpine:3.2
-MAINTAINER Navaneeth K N <navaneethkn@gmail.com>
+# This is a multi-stage Docker build that uses the golang:1.21-bullseye image to
+# a) To compile govarnam the shared .so lib and the cli bin
+# b) To compile varnamd-govarnam HTTP server that depends on the lib
+# c) To copy the results into a debian:bullseye-slim image with glibc
 
-# System upgrades and useful utilities
-RUN apk update && apk upgrade
-RUN apk add curl wget bash build-base gcc
-RUN apk add cmake cmake-doc
+###### Build stage
+FROM golang:1.21-bullseye AS build
 
-# Go for compiling varnamd
-RUN wget https://storage.googleapis.com/golang/go1.7.3.linux-amd64.tar.gz && tar -C /usr/local -xzf go1.7.3.linux-amd64.tar.gz
-RUN rm go1.7.3.linux-amd64.tar.gz
-ENV PATH="/usr/local/go/bin:${PATH}"
-ENV GOPATH="${HOME}/gopath"
+WORKDIR /app
 
-# making the go path
-RUN mkdir "${HOME}/gopath"
+# Install dependencies for git and other utilities
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libc-dev gcc git pkg-config sqlite3 && \
+    rm -rf /var/lib/apt/lists/*
 
-# Installing libvarnam
-RUN wget http://download.savannah.gnu.org/releases/varnamproject/libvarnam/source/libvarnam-3.2.5.tar.gz && \
-		tar -xvzf libvarnam-3.2.5.tar.gz && \
-		cd libvarnam-3.2.5 && \
-		cmake . && make && make install
+# Download and compile the shared libgovarnam.so lib
+RUN git clone https://github.com/varnamproject/govarnam.git
+RUN cd govarnam && go build -tags "fts5" -buildmode=c-shared -o libgovarnam.so
 
-# For making go working with alpine muscl
-RUN mkdir /lib64 && ln -s /lib/libc.musl-x86_64.so.1 /lib64/ld-linux-x86-64.so.2
+# Install the lib.
+RUN mkdir -p /usr/local/include /usr/local/lib/pkgconfig
+RUN cp govarnam/libgovarnam.so /usr/local/lib/ \
+    && cp -R govarnam/c-shared* /usr/local/include/ \
+    && cp govarnam/libgovarnam.h /usr/local/include/ \
+    && sed "s#@INSTALL_PREFIX@#/usr/local#g" govarnam/govarnam.pc.in > /usr/local/lib/pkgconfig/govarnam.pc
 
-RUN apk add git
-ENV PKG_CONFIG_PATH="/usr/local/lib/pkgconfig"
-RUN go get github.com/varnamproject/varnamd
+# Build varnamcli.
+RUN cd govarnam && go build -o varnamcli -ldflags "-s -w" ./cli
 
-# Clean the cache for saving space
-RUN apk del build-base gcc cmake cmake-doc 
-RUN apk del curl wget bash build-base gcc
-RUN apk del cmake cmake-doc
-RUN rm -rf /var/cache/apk/*
-RUN rm libvarnam-3.2.5.tar.gz
-RUN rm -rf libvarnam-3.2.5
+# Download and compile the varnamd HTTP server.
+RUN git clone https://github.com/varnamproject/varnamd-govarnam.git
+RUN cd varnamd-govarnam && go build -o varnamd-govarnam
+
+
+
+###### Runtime stage
+FROM debian:bullseye-slim
+
+# Copy the deps and the binaries from the build stage.
+COPY --from=build /usr/local/lib/libgovarnam.so /usr/local/lib/
+COPY --from=build /usr/local/include/c-shared* /usr/local/include/
+COPY --from=build /usr/local/include/libgovarnam.h /usr/local/include/
+COPY --from=build /usr/local/lib/pkgconfig/govarnam.pc /usr/local/lib/pkgconfig/
+
+# Binaries.
+RUN mkdir -p /varnamd/ui
+COPY --from=build /app/govarnam/varnamcli /usr/local/bin/
+COPY --from=build /app/varnamd-govarnam/varnamd-govarnam /usr/local/bin/varnamd
+COPY --from=build /app/varnamd-govarnam/ui /varnamd/ui/
+COPY --from=build /app/varnamd-govarnam/config.toml /varnamd/
+
+# Setup the deps.
+ENV LD_LIBRARY_PATH=/usr/local/lib
+RUN apt-get update && apt-get install -y --no-install-recommends libc-dev sqlite3 && \
+    ldconfig /usr/local/lib && \
+    apt-get remove --purge -y libc-dev && \
+    apt-get autoremove -y && \
+    rm -rf /var/lib/apt/lists/*
+
+EXPOSE 8123
+
+WORKDIR /varnamd
+ENTRYPOINT ["/usr/local/bin/varnamd"]
+CMD ["--config", "/varnamd/config.toml"]

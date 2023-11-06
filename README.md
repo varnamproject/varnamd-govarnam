@@ -1,32 +1,15 @@
-# Varnam API Server
+# Varnam API server
 
-Varnam daemon which also acts as a HTTP server. This program powers https://varnamproject.com
+A HTTP server frontend for Varnam. This program powers https://api.varnamproject.com
 
 ## Installation
 
-You need to have [govarnam](https://github.com/varnamproject/govarnam) installed in your local system for varnamd to run.
+- Install [Varnam](https://varnamproject.com/)
+- Clone this repo and run `make`
 
-- Clone
-- Run `go get` inside cloned folder
-- Use `go run .` for starting varnamd
+## Docker
 
-## Usage
-
-varnamd supports the following command line arguments:
-
-- `p` int. Run daemon in specified port
-- `max-handle-count` int. Maximum number of handles can be opened for each language
-- `host` string. Host for the varnam daemon server.
-- `ui` string. UI directory path. Put your index.html here.
-- `enable-internal-apis` boolean. Enable internal APIs
-- `enable-ssl` boolean
-- `cert-file-path` string. Certificate file path
-- `key-file-path` string.
-- `upstream` string. Provide an upstream server
-- `enable-download`. string. Comma separated language identifier for which varnamd will download words from upstream
-- `sync-interval` int.
-- `log-to-file` boolean. If true, logs will be written to a file
-- `version`
+For Docker installation and usage, refer to the [Docker README](README-docker.md).
 
 ## Hosting
 
@@ -38,7 +21,7 @@ make
 ./restart.sh
 ```
 
-Preferrably use caddy for reverse proxy:
+Preferrably use [Caddy](https://caddyserver.com/) for reverse proxy:
 
 ```ruby
 api.varnamproject.com varnam.subinsb.com {
@@ -58,10 +41,10 @@ api.varnamproject.com varnam.subinsb.com {
 ### Transliteration
 
 ```
-https://api.varnamproject.com/tl/{langCode}/{Word}
+https://api.varnamproject.com/tl/{langCode}/{word}
 ```
 
-Sample: `https://api.varnamproject.com/tl/ml/Malayalam`. Response:
+A GET request to `https://api.varnamproject.com/tl/ml/malayalam` will give the response:
 
 ```json
 {
@@ -81,8 +64,8 @@ Sample: `https://api.varnamproject.com/tl/ml/Malayalam`. Response:
     "മലയാളമാദ്ധ്യമത്തിൽ",
     "മലയാളമാദ്ധ്യമം"
   ],
-  "input": "Malayalam"
+  "input": "malayalam"
 }
 ```
 
-##### see server.go for supported APIs.
+See `server.go` for the full API list.

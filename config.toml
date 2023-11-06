@@ -8,7 +8,7 @@
   # download-enabled-schemes = "ml,ml-inscript"
   sync-interval = "5s"
   accounts-enabled = false
-  address = "127.0.0.1:8123"
+  address = "0.0.0.0:8123"
   [app.max-handle-count]
     default = 10
     ml = 30
