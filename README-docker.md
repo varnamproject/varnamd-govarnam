@@ -17,7 +17,7 @@ docker run -e VARNAM_LEARNINGS_DIR=/varnamd/learnings -e VARNAM_VST_DIR=/varnamd
 	-v $(pwd)/data/vst/:/varnamd/vst/ \
 	-v $(pwd)/data/input/:/varnamd/input/ \
 	-p 8123:8123 \
-	--name varnamd varnamproject.github.io/varnamproject/varnamd:latest
+	--name varnamd ghcr.io/varnamproject/varnamd:latest
 ```
 
 PS: Add the `-d` flag to `docker run` to run the server in the background.
