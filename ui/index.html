@@ -1,76 +1,120 @@
 <!DOCTYPE html>
-<html>
-
+<html lang="en">
 <head>
-    <meta charset="utf-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
-    <meta name="description" content="">
-    <meta name="viewport" content="width=device-width">
-    <!-- <meta http-equiv="Content-Security-Policy" content="default-src *; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline' 'unsafe-eval' http://ajax.googleapis.com"> -->
+    <title>Varnam - Type in Indian languaget</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+        html, body {
+            font-family: "Inter", "Helvetica Neue", "Museo Sans", sans-serif;
+            font-size: 22px;
+            line-height: 36px;
+            color: #333;
+        }
+        textarea {
+            font-family: "Inter", "Helvetica Neue", "Museo Sans", sans-serif;
+            padding: 15px;
+            font-size: 1.2rem;
+            line-height: 1.5rem;
+            border: 1px solid #ccc;
+            box-shadow: 2px 2px 2px #eee;
+            outline: none;
+            width: 100%;
+            height: 800px;
+        }
+        select {
+            padding: 5px 10px;
+            font-size: 1rem;
+        }
+        a {
+            color: #999;
+        }
+        h1 {
+            margin: 0 0 15px 0;
+        }
 
-    <link rel="stylesheet" href="/stylesheets/bootstrap.css">
-    <link rel="stylesheet" href="/stylesheets/bootstrap-responsive.css">
-    <link rel="stylesheet" href="/stylesheets/styles.css">
-    <link rel="stylesheet" href="stylesheets/ambiance.css">
-    <link rel="stylesheet" href="stylesheets/codemirror.css">
-    <link rel="stylesheet" media="print" href="stylesheets/print.css">
+        header {
+          display: flex;
+          justify-content: space-between;
+        }
+        .container {
+            margin: 30px auto 20px auto;
+            max-width: 1000px;
+        }
+        .floatype {
+            position: absolute;
+            background: #f8f8f8;
+            border: 1px solid #ccc;
+            box-shadow: 2px 2px 2px #eee;
+            text-align: left;
+            max-width: 200px;
+        }
+        .floatype-item {
+            padding-bottom: 5px;
+            padding: 3px 10px;
+            cursor: pointer;
+        }
+        .floatype-item:hover {
+            background: #f1f1f1;
+        }
+        .floatype-sel {
+            background: #f1f1f1;
+            font-weight: bold;
+        }
 
-    <title>Varnam - Type in Indian languages</title>
+        @media screen and (max-width: 900px) {
+            body {
+                font-size: 18px;
+                line-height: 22px;
+            }
+            .container {
+                margin-top: 5vh;
+            }
+        }
+    </style>
 </head>
-
 <body>
-    <div id="network-error" class="alert alert-error networkerror">
-        Your Internet connection might have interrupted
-        <button type="button" class="close" id="network-error-close">×</button>
-    </div>
-    <div class="container main-content">
-        <div class="navbar toolbar">
-            <div class="btn-toolbar  pull-right">
-                <div class="btn-group">
-                    <a class="btn dropdown-toggle" data-toggle="dropdown" href="#" id='selected_lang' data-lang='en'>
-                        English
-                        <span class="caret"></span>
-                    </a>
-                    <ul class="dropdown-menu" id="lang-menu">
-                        <li><a tabindex="-1" href="#" class='lang' data-lang='en'>English</a></li>
-                    </ul>
-                </div>
-                <div class="btn-group">
-                    <button type="button" class="btn" title='Print' id='printBtn'>
-                        <i class="icon-print"> </i>
-                    </button>
-                </div>
-                <div class="btn-group" data-toggle="buttons-radio">
-                    <button type="button" class="btn" data-preview="editor" title='Editor' id='editorBtn'>
-                        <i class="icon-edit"> </i>
-                    </button>
-                    <button type="button" class="btn" data-preview="preview" title='Preview' id='previewBtn'>
-                        <i class="icon-eye-open"></i>
-                    </button>
-                </div>
-            </div>
-        </div>
-        <div class="editor">
-            <div id='editor_div'>
-                <textarea id='code' name='code'></textarea>
-            </div>
-            <div id='preview_div'>
-                <iframe id='preview'>
-                </iframe>
-            </div>
-            <div style='display:none' id='reserve'></div>
-        </div>
-    </div>
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"></script>
-    <script>window.jQuery || document.write('<script src="javascripts/jquery-1.8.2.min.js">\x3C/script>')</script>
-    <script src="javascripts/varnam.js"></script>
-    <script>
-        $.get('languages', function (data) {
-            $.each(data, function (i, language) {
-                $("#lang-menu").append("<li><a tabindex='-1' href='#' class='lang' data-lang='" + language.Identifier + "'>" + language.DisplayName + "</a></li>")
-            });
-        });
-    </script>
-</body>
 
+<div class="container">
+    <header>
+        <div><h1>Varnam</h1></div>
+        <div><select id="langs"></select></div>
+    </header>
+    <textarea autofocus></textarea>
+
+    <p><small><a href="https://varnamproject.com">Varnam Project</a></small></p>
+</div>
+
+<script type="module">
+    import { floatype } from './floatype.min.js';
+    // Fetch the languages and populate the selector.
+    const response = await fetch("/languages");
+    const langs = await response.json();
+    const sel = document.querySelector("#langs");
+    langs.forEach(item => {
+      const option = new Option(item.DisplayName, item.LangCode);
+      sel.add(option);
+    });
+
+
+    let debounce;
+    floatype(document.querySelector("textarea"), {
+      onQuery: async (val) => {
+        clearTimeout(debounce);
+        return new Promise(resolve => {
+          debounce = setTimeout(async () => {
+            const response = await fetch(`/tl/${sel.value}/${val.toLowerCase()}`);
+            const data = await response.json();
+
+            debounce = null;
+            resolve([...new Set(data.result)]);
+          }, 50);
+        });
+      }
+    });
+</script>
+</body>
 </html>
