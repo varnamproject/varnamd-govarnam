@@ -129,6 +129,10 @@ func handleTransliteration(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("error transliterating given string. message: %s", err.Error()))
 	}
 
+	if len(word) > 300 {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("error transliterating given string. message: too long input"))
+	}
+
 	cacheKey := fmt.Sprintf("tl-%s-%s", langCode, word)
 
 	words, err := app.cache.GetString(cacheKey)
@@ -163,6 +167,10 @@ func handleAdvancedTransliteration(c echo.Context) error {
 	if err != nil {
 		app.log.Printf("error in transliterating, err: %s", err.Error())
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("error transliterating given string. message: %s", err.Error()))
+	}
+
+	if len(word) > 300 {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("error transliterating given string. message: too long input"))
 	}
 
 	var response advancedTransliterationResponse
